@@ -4,24 +4,71 @@ Phase 1 is intentionally limited to the handheld controller.
 
 ## ESP32-C3 SuperMini
 
-Reads both joysticks and their switches, handles local controller state, and communicates with the S3 over UART.
+The C3 reads both joysticks and their switches, performs local input processing, and sends controller telemetry/events to the S3 over Wi-Fi TCP.
+
+### Navigation joystick
+
+- X/Y = menu navigation
+- Short press = Select
+- Hold = Back
+
+### Driving joystick
+
+- X/Y = driving input
+- Short press = Brake
+- Hold = Emergency Stop
 
 ## ESP32-S3 ES3C28P
 
-Runs the 2.8-inch ILI9341V display and renders the landscape cyberpunk UI. Capacitive touch exists on the hardware but is intentionally not used.
+The S3 creates the dedicated controller Wi-Fi network, accepts the C3 TCP connection, and renders the 2.8-inch ILI9341V landscape cyberpunk UI.
 
-## Input assignments
+Capacitive touch exists on the hardware but is intentionally not used.
 
-Navigation joystick: movement navigates; short press selects; hold returns/back.
+## Controller network
 
-Driving joystick: movement becomes driving input; short press brakes; hold triggers emergency stop.
+The S3 operates as a Wi-Fi access point:
 
-## UART
+- SSID: DUAL-MOTOR-V2
+- Password: DMV2-CTRL
+- IP: 192.168.4.1
+- TCP port: 4210
 
-C3 GPIO20 TX -> S3 GPIO43 RX
+The C3 operates as a Wi-Fi station and connects to the S3 AP.
 
-C3 GPIO21 RX <- S3 GPIO44 TX
+This creates a direct controller network without requiring a home/router Wi-Fi network or Internet access.
 
-GND -> GND
+## Transport
 
-Power is separate from UART signaling and follows the S3 board's documented electrical requirements.
+TCP is used because controller telemetry and button events need reliable, ordered delivery.
+
+### C3 -> S3
+
+- `READY,C3`
+- `DEVICE,DUAL_MOTOR_V2_C3`
+- `INPUT,navX,navY,driveX,driveY`
+- `EVENT,NAV_SELECT`
+- `EVENT,NAV_BACK`
+- `EVENT,DRIVE_BRAKE`
+- `EVENT,DRIVE_ESTOP`
+- `PONG,C3`
+
+### S3 -> C3
+
+- `PING`
+- `IDENTIFY`
+
+Telemetry is sent approximately every 50 ms while the TCP link is available.
+
+## Legacy UART
+
+The previously documented C3 GPIO20/GPIO21 to S3 GPIO43/GPIO44 UART wiring remains physically documented, but the current firmware does not use it. The active controller communication path is Wi-Fi.
+
+## Link recovery
+
+The C3 periodically retries Wi-Fi and TCP connection establishment.
+
+The S3 detects stale controller traffic and changes the UI to a Wi-Fi waiting/offline state when the C3 stops sending packets.
+
+## Vehicle boundary
+
+The vehicle is not connected yet. The S3 continues to display **VEHICLE: NOT CONNECTED** rather than fabricating vehicle telemetry.
