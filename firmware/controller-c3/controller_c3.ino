@@ -24,7 +24,7 @@
 constexpr char WIFI_SSID[] = "DUAL-MOTOR-V2";
 constexpr char WIFI_PASSWORD[] = "DMV2-CTRL";
 
-constexpr IPAddress S3_IP(192, 168, 4, 1);
+const IPAddress S3_IP(192, 168, 4, 1);
 constexpr uint16_t TCP_PORT = 4210;
 
 WiFiClient ControllerClient;
