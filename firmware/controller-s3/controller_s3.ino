@@ -76,6 +76,7 @@ int driveX = 0;
 int driveY = 0;
 
 String lastEvent = "SYSTEM READY";
+String selectionMessage = "READY";
 
 uint32_t lastPacketMs = 0;
 uint32_t lastDrawMs = 0;
@@ -194,26 +195,43 @@ void drawStatusPanel() {
   tft.print("NOT CONNECTED");
 
   tft.setTextColor(WHITE, PANEL);
-  tft.setCursor(14, 213);
+  tft.setCursor(14, 210);
   tft.print("EVENT: ");
 
   String eventText = lastEvent;
-  if (eventText.length() > 34) {
-    eventText = eventText.substring(0, 34);
+  if (eventText.length() > 28) {
+    eventText = eventText.substring(0, 28);
   }
   tft.print(eventText);
 
+  // Prominent navigation/drive action feedback.
+  tft.setTextColor(YELLOW, PANEL);
+  tft.setCursor(190, 210);
+  tft.print(selectionMessage.substring(0, 12));
+
   tft.setTextColor(CYAN, PANEL);
-  tft.setCursor(278, 213);
+  tft.setCursor(278, 210);
   tft.print("V2");
 }
 
-void drawUI() {
+void drawStaticUI() {
   tft.fillScreen(BG);
-
   drawHeader();
   drawNavigationPanel();
   drawDrivePanel();
+  drawStatusPanel();
+}
+
+void drawDynamicUI() {
+  // Do NOT clear/redraw the whole screen every frame.
+  // Full-screen redraws caused the visible wipe/scan line.
+  drawHeader();
+
+  // Redraw only the two joystick panels.
+  drawNavigationPanel();
+  drawDrivePanel();
+
+  // Redraw only the status panel.
   drawStatusPanel();
 }
 
@@ -247,6 +265,7 @@ void handlePacket(String packet) {
 
   if (packet.startsWith("EVENT,")) {
     lastEvent = packet.substring(6);
+    selectionMessage = lastEvent;
     lastPacketMs = millis();
     c3Ready = true;
     return;
@@ -254,6 +273,7 @@ void handlePacket(String packet) {
 
   if (packet == "READY,C3") {
     lastEvent = "C3 READY";
+    selectionMessage = "READY";
     lastPacketMs = millis();
     c3Ready = true;
     return;
@@ -261,6 +281,7 @@ void handlePacket(String packet) {
 
   if (packet == "PONG,C3") {
     lastEvent = "C3 PONG";
+    selectionMessage = "C3 PONG";
     lastPacketMs = millis();
     c3Ready = true;
     return;
@@ -297,7 +318,9 @@ void setup() {
   tft.begin();
 
   // Landscape: 320 x 240.
-  tft.setRotation(1);
+  // The physical ES3C28P is mounted opposite to the default landscape direction.
+  // Adafruit rotation 3 is the 180-degree counterpart of rotation 1.
+  tft.setRotation(3);
 
   // IPS panel normally looks correct with inversion enabled.
   tft.invertDisplay(true);
@@ -327,7 +350,7 @@ void setup() {
   ControllerSerial.println("PING");
   lastPingMs = millis();
 
-  drawUI();
+  drawStaticUI();
 }
 
 // -----------------------------
@@ -348,6 +371,6 @@ void loop() {
   // Refresh UI at 10 FPS.
   if (millis() - lastDrawMs >= 100) {
     lastDrawMs = millis();
-    drawUI();
+    drawDynamicUI();
   }
 }
