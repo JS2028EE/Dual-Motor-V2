@@ -5,36 +5,40 @@
  * Adafruit_GFX + Adafruit_ILI9341 version.
  * Touch is intentionally unused.
  *
- * UART:
- *   S3 GPIO43 RX <- C3 GPIO20 TX
- *   S3 GPIO44 TX -> C3 GPIO21 RX
+ * NETWORK:
+ *   S3 creates the dedicated controller Wi-Fi AP.
+ *   C3 connects to this AP as a Wi-Fi station.
+ *   Transport: TCP
+ *   AP IP: 192.168.4.1
+ *   TCP port: 4210
  *
- * ES3C28P LCD:
- *   CS   = GPIO10
- *   DC   = GPIO46
- *   SCK  = GPIO12
- *   MOSI = GPIO11
- *   MISO = GPIO13
- *   RST  = shared board reset / EN (not driven separately)
- *   BL   = GPIO45
+ * The old GPIO43/GPIO44 UART wiring is retained physically but is
+ * no longer used by this firmware. Controller communication is Wi-Fi.
  */
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <WiFi.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 
-HardwareSerial ControllerSerial(1);
+// ------------------------------------------------------------
+// Wi-Fi link
+// ------------------------------------------------------------
+constexpr char WIFI_SSID[] = "DUAL-MOTOR-V2";
+constexpr char WIFI_PASSWORD[] = "DMV2-CTRL";
 
-// -----------------------------
-// UART
-// -----------------------------
-constexpr uint8_t UART_RX_PIN = 43;
-constexpr uint8_t UART_TX_PIN = 44;
+constexpr uint16_t TCP_PORT = 4210;
 
-// -----------------------------
+WiFiServer ControllerServer(TCP_PORT);
+WiFiClient ControllerClient;
+
+uint32_t lastPingMs = 0;
+uint32_t lastDrawMs = 0;
+
+// ------------------------------------------------------------
 // ES3C28P LCD
-// -----------------------------
+// ------------------------------------------------------------
 constexpr uint8_t TFT_CS   = 10;
 constexpr uint8_t TFT_DC   = 46;
 constexpr uint8_t TFT_MOSI = 11;
@@ -43,8 +47,6 @@ constexpr uint8_t TFT_MISO = 13;
 constexpr int8_t  TFT_RST  = -1;
 constexpr uint8_t TFT_BL   = 45;
 
-// Explicit-pin constructor keeps the ES3C28P SPI pins independent
-// of the ESP32-S3 board's default SPI mapping.
 Adafruit_ILI9341 tft(
   TFT_CS,
   TFT_DC,
@@ -54,9 +56,9 @@ Adafruit_ILI9341 tft(
   TFT_MISO
 );
 
-// -----------------------------
+// ------------------------------------------------------------
 // Display
-// -----------------------------
+// ------------------------------------------------------------
 constexpr int SCREEN_W = 320;
 constexpr int SCREEN_H = 240;
 
@@ -79,14 +81,11 @@ String lastEvent = "SYSTEM READY";
 String selectionMessage = "READY";
 
 uint32_t lastPacketMs = 0;
-uint32_t lastDrawMs = 0;
-uint32_t lastPingMs = 0;
-
 bool c3Ready = false;
 
-// -----------------------------
+// ------------------------------------------------------------
 // Drawing helpers
-// -----------------------------
+// ------------------------------------------------------------
 void panel(int x, int y, int w, int h, uint16_t accent) {
   tft.fillRoundRect(x, y, w, h, 6, PANEL);
   tft.drawRoundRect(x, y, w, h, 6, accent);
@@ -115,8 +114,13 @@ void drawHeader() {
 
   tft.setTextSize(1);
   tft.setTextColor(c3Ready ? GREEN : YELLOW, BG);
-  tft.setCursor(245, 9);
-  tft.print(c3Ready ? "CTRL ONLINE" : "CTRL WAITING");
+  tft.setCursor(226, 9);
+
+  if (c3Ready) {
+    tft.print("C3 WIFI ONLINE");
+  } else {
+    tft.print("C3 WIFI WAITING");
+  }
 }
 
 void drawNavigationPanel() {
@@ -184,13 +188,21 @@ void drawStatusPanel() {
 
   tft.setTextColor(WHITE, PANEL);
   tft.setCursor(14, 195);
-  tft.print("UART: ");
-  tft.print((millis() - lastPacketMs < 500) ? "CONNECTED" : "WAITING");
+  tft.print("LINK: ");
 
-  tft.setCursor(115, 195);
+  tft.setTextColor(
+    c3Ready ? GREEN : YELLOW,
+    PANEL
+  );
+
+  tft.print(
+    c3Ready ? "WIFI CONNECTED" : "WIFI WAITING"
+  );
+
+  tft.setTextColor(WHITE, PANEL);
+  tft.setCursor(145, 195);
   tft.print("VEHICLE: ");
 
-  // Vehicle is intentionally not fabricated.
   tft.setTextColor(RED, PANEL);
   tft.print("NOT CONNECTED");
 
@@ -204,7 +216,6 @@ void drawStatusPanel() {
   }
   tft.print(eventText);
 
-  // Prominent navigation/drive action feedback.
   tft.setTextColor(YELLOW, PANEL);
   tft.setCursor(190, 210);
   tft.print(selectionMessage.substring(0, 12));
@@ -223,22 +234,46 @@ void drawStaticUI() {
 }
 
 void drawDynamicUI() {
-  // Do NOT clear/redraw the whole screen every frame.
-  // Full-screen redraws caused the visible wipe/scan line.
+  // Never clear the entire screen during normal operation.
+  // This prevents the visible wipe/scan-line effect.
   drawHeader();
-
-  // Redraw only the two joystick panels.
   drawNavigationPanel();
   drawDrivePanel();
-
-  // Redraw only the status panel.
   drawStatusPanel();
 }
 
-// -----------------------------
-// UART packet handling
-// -----------------------------
-void handlePacket(String packet) {
+// ------------------------------------------------------------
+// Network helpers
+// ------------------------------------------------------------
+void sendPacket(const String &packet) {
+  if (!ControllerClient || !ControllerClient.connected()) {
+    return;
+  }
+
+  ControllerClient.println(packet);
+}
+
+void acceptController() {
+  if (ControllerClient && ControllerClient.connected()) {
+    return;
+  }
+
+  WiFiClient newClient = ControllerServer.available();
+
+  if (newClient) {
+    ControllerClient.stop();
+    ControllerClient = newClient;
+
+    lastPacketMs = millis();
+    c3Ready = true;
+
+    Serial.println("[WiFi] C3 connected");
+    sendPacket("PING");
+    sendPacket("IDENTIFY");
+  }
+}
+
+void handleControllerPacket(String packet) {
   packet.trim();
 
   if (packet.length() == 0) {
@@ -251,10 +286,29 @@ void handlePacket(String packet) {
     int p3 = packet.indexOf(',', p2 + 1);
 
     if (p1 > 0 && p2 > p1 && p3 > p2) {
-      navX   = constrain(packet.substring(6, p1).toInt(), -1000, 1000);
-      navY   = constrain(packet.substring(p1 + 1, p2).toInt(), -1000, 1000);
-      driveX = constrain(packet.substring(p2 + 1, p3).toInt(), -1000, 1000);
-      driveY = constrain(packet.substring(p3 + 1).toInt(), -1000, 1000);
+      navX = constrain(
+        packet.substring(6, p1).toInt(),
+        -1000,
+        1000
+      );
+
+      navY = constrain(
+        packet.substring(p1 + 1, p2).toInt(),
+        -1000,
+        1000
+      );
+
+      driveX = constrain(
+        packet.substring(p2 + 1, p3).toInt(),
+        -1000,
+        1000
+      );
+
+      driveY = constrain(
+        packet.substring(p3 + 1).toInt(),
+        -1000,
+        1000
+      );
 
       lastPacketMs = millis();
       c3Ready = true;
@@ -279,6 +333,14 @@ void handlePacket(String packet) {
     return;
   }
 
+  if (packet == "DEVICE,DUAL_MOTOR_V2_C3") {
+    lastEvent = "C3 IDENTIFIED";
+    selectionMessage = "C3 ONLINE";
+    lastPacketMs = millis();
+    c3Ready = true;
+    return;
+  }
+
   if (packet == "PONG,C3") {
     lastEvent = "C3 PONG";
     selectionMessage = "C3 PONG";
@@ -286,27 +348,65 @@ void handlePacket(String packet) {
     c3Ready = true;
     return;
   }
+}
 
-  if (packet.startsWith("DEVICE,")) {
-    lastEvent = packet.substring(7);
-    lastPacketMs = millis();
-    c3Ready = true;
+void handleControllerNetwork() {
+  acceptController();
+
+  if (!ControllerClient || !ControllerClient.connected()) {
+    if (c3Ready && millis() - lastPacketMs > 1500) {
+      c3Ready = false;
+      lastEvent = "C3 WIFI LOST";
+      selectionMessage = "OFFLINE";
+    }
     return;
+  }
+
+  while (ControllerClient.available()) {
+    String packet = ControllerClient.readStringUntil('\n');
+    handleControllerPacket(packet);
+  }
+
+  if (millis() - lastPingMs >= 1000) {
+    lastPingMs = millis();
+    sendPacket("PING");
   }
 }
 
-// -----------------------------
+// ------------------------------------------------------------
 // Setup
-// -----------------------------
+// ------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
 
-  ControllerSerial.begin(
-    115200,
-    SERIAL_8N1,
-    UART_RX_PIN,
-    UART_TX_PIN
+  // ES3C28P creates the dedicated controller network.
+  WiFi.mode(WIFI_AP);
+  WiFi.setSleep(false);
+
+  IPAddress apIP(192, 168, 4, 1);
+  IPAddress gateway(192, 168, 4, 1);
+  IPAddress subnet(255, 255, 255, 0);
+
+  WiFi.softAPConfig(apIP, gateway, subnet);
+  WiFi.softAP(
+    WIFI_SSID,
+    WIFI_PASSWORD,
+    6,
+    false,
+    2
   );
+
+  ControllerServer.begin();
+
+  Serial.println();
+  Serial.println("=== DUAL MOTOR V2 / S3 ===");
+  Serial.println("Communication: Wi-Fi TCP");
+  Serial.print("AP SSID: ");
+  Serial.println(WIFI_SSID);
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
+  Serial.print("TCP port: ");
+  Serial.println(TCP_PORT);
 
   // ES3C28P backlight.
   pinMode(TFT_BL, OUTPUT);
@@ -314,15 +414,12 @@ void setup() {
 
   delay(100);
 
-  // Initialize ILI9341.
   tft.begin();
 
-  // Landscape: 320 x 240.
-  // The physical ES3C28P is mounted opposite to the default landscape direction.
-  // Adafruit rotation 3 is the 180-degree counterpart of rotation 1.
+  // Physical display orientation.
   tft.setRotation(3);
 
-  // IPS panel normally looks correct with inversion enabled.
+  // IPS panel.
   tft.invertDisplay(true);
 
   tft.fillScreen(BG);
@@ -342,33 +439,30 @@ void setup() {
   tft.print("ENGINEERING CONSOLE");
 
   tft.setTextColor(GREEN, BG);
-  tft.setCursor(115, 162);
-  tft.print("S3 INITIALIZING");
+  tft.setCursor(96, 162);
+  tft.print("WIFI INITIALIZING");
 
   delay(900);
-
-  ControllerSerial.println("PING");
-  lastPingMs = millis();
 
   drawStaticUI();
 }
 
-// -----------------------------
+// ------------------------------------------------------------
 // Main loop
-// -----------------------------
+// ------------------------------------------------------------
 void loop() {
-  while (ControllerSerial.available()) {
-    String packet = ControllerSerial.readStringUntil('\n');
-    handlePacket(packet);
+  handleControllerNetwork();
+
+  // If the C3 has stopped sending packets, mark the link offline.
+  if (
+    c3Ready &&
+    millis() - lastPacketMs > 1500
+  ) {
+    c3Ready = false;
+    lastEvent = "C3 WIFI TIMEOUT";
+    selectionMessage = "OFFLINE";
   }
 
-  // Keep the C3 handshake alive.
-  if (millis() - lastPingMs >= 1000) {
-    lastPingMs = millis();
-    ControllerSerial.println("PING");
-  }
-
-  // Refresh UI at 10 FPS.
   if (millis() - lastDrawMs >= 100) {
     lastDrawMs = millis();
     drawDynamicUI();
