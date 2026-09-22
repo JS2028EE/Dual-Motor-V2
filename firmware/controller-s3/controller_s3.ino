@@ -245,12 +245,18 @@ void drawDynamicUI() {
 // ------------------------------------------------------------
 // Network helpers
 // ------------------------------------------------------------
-void sendPacket(const String &packet) {
+bool sendPacket(const String &packet) {
   if (!ControllerClient || !ControllerClient.connected()) {
-    return;
+    return false;
   }
 
-  ControllerClient.println(packet);
+  size_t written = ControllerClient.println(packet);
+  if (written == 0) {
+    ControllerClient.stop();
+    return false;
+  }
+
+  return true;
 }
 
 void acceptController() {
@@ -263,6 +269,7 @@ void acceptController() {
   if (newClient) {
     ControllerClient.stop();
     ControllerClient = newClient;
+    ControllerClient.setNoDelay(true);
 
     lastPacketMs = millis();
     c3Ready = true;
@@ -322,6 +329,7 @@ void handleControllerPacket(String packet) {
     selectionMessage = lastEvent;
     lastPacketMs = millis();
     c3Ready = true;
+    drawStatusUI();
     return;
   }
 
@@ -330,6 +338,7 @@ void handleControllerPacket(String packet) {
     selectionMessage = "READY";
     lastPacketMs = millis();
     c3Ready = true;
+    drawStatusUI();
     return;
   }
 
@@ -338,6 +347,7 @@ void handleControllerPacket(String packet) {
     selectionMessage = "C3 ONLINE";
     lastPacketMs = millis();
     c3Ready = true;
+    drawStatusUI();
     return;
   }
 
