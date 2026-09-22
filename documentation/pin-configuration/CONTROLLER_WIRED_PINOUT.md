@@ -25,7 +25,7 @@
 | UART TX | GPIO44 | C3 GPIO21 RX |
 | GND | GND | C3 GND |
 
-UART signaling is 3.3 V logic.
+UART signaling is 3.3 V logic. **Legacy note:** the current controller firmware no longer uses this UART link; C3/S3 communication now occurs over Wi-Fi TCP. The physical UART wiring may remain soldered but is inactive in firmware.
 
 ## Switch behavior
 
