@@ -34,7 +34,9 @@ WiFiServer ControllerServer(TCP_PORT);
 WiFiClient ControllerClient;
 
 uint32_t lastPingMs = 0;
-uint32_t lastDrawMs = 0;
+uint32_t lastLiveDrawMs = 0;
+char rxBuffer[128];
+size_t rxLength = 0;
 
 // ------------------------------------------------------------
 // ES3C28P LCD
@@ -233,13 +235,39 @@ void drawStaticUI() {
   drawStatusPanel();
 }
 
-void drawDynamicUI() {
-  // Never clear the entire screen during normal operation.
-  // This prevents the visible wipe/scan-line effect.
+void drawLiveCrosshair(int cx, int cy, int x, int y, uint16_t color) {
+  tft.fillRect(cx - 34, cy - 34, 68, 68, PANEL);
+  tft.drawCircle(cx, cy, 27, GRID);
+  tft.drawFastHLine(cx - 31, cy, 62, GRID);
+  tft.drawFastVLine(cx, cy - 31, 62, GRID);
+  int px = cx + map(x, -1000, 1000, -22, 22);
+  int py = cy + map(y, -1000, 1000, 22, -22);
+  tft.fillCircle(px, py, 5, color);
+  tft.drawCircle(px, py, 8, color);
+}
+
+void drawLiveUI() {
+  drawLiveCrosshair(81, 99, navX, navY, MAGENTA);
+  drawLiveCrosshair(239, 99, driveX, driveY, CYAN);
+
+  tft.fillRect(13, 138, 136, 11, PANEL);
+  tft.setTextSize(1);
+  tft.setTextColor(WHITE, PANEL);
+  tft.setCursor(15, 140); tft.print("X: "); tft.print(navX);
+  tft.setCursor(84, 140); tft.print("Y: "); tft.print(navY);
+
+  tft.fillRect(171, 138, 136, 11, PANEL);
+  tft.setCursor(173, 140); tft.print("X: "); tft.print(driveX);
+  tft.setCursor(242, 140); tft.print("Y: "); tft.print(driveY);
+}
+
+void drawStatusUI() {
   drawHeader();
-  drawNavigationPanel();
-  drawDrivePanel();
   drawStatusPanel();
+}
+
+void drawDynamicUI() {
+  drawLiveUI();
 }
 
 // ------------------------------------------------------------
@@ -360,6 +388,18 @@ void handleControllerPacket(String packet) {
   }
 }
 
+void processRxByte(char c) {
+  if (c == '\n') {
+    rxBuffer[rxLength] = '\0';
+    handleControllerPacket(String(rxBuffer));
+    rxLength = 0;
+    return;
+  }
+  if (c == '\r') return;
+  if (rxLength < sizeof(rxBuffer) - 1) rxBuffer[rxLength++] = c;
+  else rxLength = 0;
+}
+
 void handleControllerNetwork() {
   acceptController();
 
@@ -374,8 +414,7 @@ void handleControllerNetwork() {
   }
 
   while (ControllerClient.available()) {
-    String packet = ControllerClient.readStringUntil('\n');
-    handleControllerPacket(packet);
+    processRxByte(static_cast<char>(ControllerClient.read()));
   }
 
   if (millis() - lastPingMs >= 1000) {
@@ -464,19 +503,16 @@ void setup() {
 void loop() {
   handleControllerNetwork();
 
-  // If the C3 has stopped sending packets, mark the link offline.
-  if (
-    c3Ready &&
-    millis() - lastPacketMs > 1500
-  ) {
+  if (c3Ready && millis() - lastPacketMs > 2000) {
     c3Ready = false;
     lastEvent = "C3 WIFI TIMEOUT";
     selectionMessage = "OFFLINE";
     ControllerClient.stop();
+    drawStatusUI();
   }
 
-  if (millis() - lastDrawMs >= 100) {
-    lastDrawMs = millis();
-    drawDynamicUI();
+  if (millis() - lastLiveDrawMs >= 30) {
+    lastLiveDrawMs = millis();
+    drawLiveUI();
   }
 }
