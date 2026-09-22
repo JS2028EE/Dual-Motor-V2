@@ -131,7 +131,7 @@ void connectToS3() {
     return;
   }
 
-  if (millis() - lastWiFiAttemptMs < 1000) {
+  if (millis() - lastWiFiAttemptMs < 5000) {
     return;
   }
 
@@ -140,7 +140,6 @@ void connectToS3() {
   Serial.print("[WiFi] Connecting to ");
   Serial.println(WIFI_SSID);
 
-  WiFi.disconnect();
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 }
 
