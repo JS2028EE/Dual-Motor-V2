@@ -171,6 +171,7 @@ void handleNetworkCommand() {
 
 void connectTCP() {
   if (WiFi.status() != WL_CONNECTED) {
+    ControllerClient.stop();
     return;
   }
 
@@ -189,6 +190,7 @@ void connectTCP() {
   ControllerClient.stop();
 
   if (ControllerClient.connect(S3_IP, TCP_PORT)) {
+    ControllerClient.setNoDelay(true);
     Serial.println("[WiFi] Controller link connected");
     sendPacket("READY,C3");
     sendPacket("DEVICE,DUAL_MOTOR_V2_C3");
@@ -281,6 +283,8 @@ void setup() {
 
   // Keep the local controller link responsive.
   WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(false);
 
   Serial.println();
   Serial.println("=== DUAL MOTOR V2 / C3 ===");
@@ -318,7 +322,7 @@ void loop() {
   updateButton(navButton, NAV_SW_PIN, true);
   updateButton(driveButton, DRIVE_SW_PIN, false);
 
-  if (millis() - lastTelemetryMs >= 50) {
+  if (millis() - lastTelemetryMs >= 20) {
     lastTelemetryMs = millis();
     sendState(nav, drive);
   }
