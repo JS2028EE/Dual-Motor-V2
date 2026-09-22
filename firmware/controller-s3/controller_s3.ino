@@ -20,6 +20,7 @@ HardwareSerial ControllerSerial(1);
 
 constexpr uint8_t UART_RX_PIN = 43;
 constexpr uint8_t UART_TX_PIN = 44;
+constexpr uint8_t TFT_BL_PIN = 45;
 
 constexpr int SCREEN_W = 320;
 constexpr int SCREEN_H = 240;
@@ -136,6 +137,10 @@ void handlePacket(String packet) {
 
 void setup() {
   ControllerSerial.begin(115200, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+
+  // ES3C28P LCD backlight: GPIO45, HIGH = ON.
+  pinMode(TFT_BL_PIN, OUTPUT);
+  digitalWrite(TFT_BL_PIN, HIGH);
 
   tft.init();
   tft.setRotation(1);
