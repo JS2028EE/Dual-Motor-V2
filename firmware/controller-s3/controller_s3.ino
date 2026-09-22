@@ -358,6 +358,7 @@ void handleControllerNetwork() {
       c3Ready = false;
       lastEvent = "C3 WIFI LOST";
       selectionMessage = "OFFLINE";
+      ControllerClient.stop();
     }
     return;
   }
@@ -461,6 +462,7 @@ void loop() {
     c3Ready = false;
     lastEvent = "C3 WIFI TIMEOUT";
     selectionMessage = "OFFLINE";
+    ControllerClient.stop();
   }
 
   if (millis() - lastDrawMs >= 100) {
