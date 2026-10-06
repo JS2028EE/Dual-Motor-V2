@@ -39,8 +39,8 @@ Forward is defined as movement toward the joystick module's pin header. Axis inv
 | GPIO8 | SDA / built-in LED |
 | GPIO9 | SCL |
 | GPIO10 | GPIO10 |
-| GPIO20 | TX — legacy UART, not used by Wi-Fi firmware |
-| GPIO21 | RX — legacy UART, not used by Wi-Fi firmware |
+| GPIO20 | RX — legacy UART, not used by Wi-Fi firmware |
+| GPIO21 | TX — legacy UART, not used by Wi-Fi firmware |
 | 3V3 | 3.3V |
 | GND | Ground |
 | 5V | 5V |
@@ -61,8 +61,8 @@ ILI9341V, 2.8-inch IPS TFT, 240x320, 4-line SPI.
 - Touch interrupt: GPIO17
 - RGB LED: GPIO42
 - Battery ADC: GPIO9
-- UART0 RX: GPIO43 — legacy controller UART, not used by Wi-Fi firmware
-- UART0 TX: GPIO44 — legacy controller UART, not used by Wi-Fi firmware
+- UART0 RX: GPIO44 — legacy controller UART, not used by Wi-Fi firmware
+- UART0 TX: GPIO43 — legacy controller UART, not used by Wi-Fi firmware
 - Expansion: GPIO2, GPIO3, GPIO14, GPIO21
 
 ## Wi-Fi controller link
@@ -92,3 +92,11 @@ Landscape orientation. Dark neon cyberpunk engineering-console aesthetic. Curren
 - 2 x 3–6V DC motors
 - 3 x 1.5V batteries in series = 4.5V motor supply
 - 3.7V Li-ion electronics supply
+
+## Repository status
+
+This is an in-progress controller redesign. The repository contains C3 and S3 controller firmware, but `firmware/vehicle-esp32/` currently contains only a README. Vehicle control, GPS, motor power, and end-to-end emergency-stop validation are still future work. Earlier version records and wired-UART assembly notes are retained for context; current firmware communicates over Wi-Fi/TCP.
+
+The pin table lists common board labels and default peripheral roles. It is not proof that every marked analog pin supports ADC on the selected ESP32-C3. Current joystick firmware uses GPIO0, GPIO1, GPIO3, and GPIO4. Check the exact board documentation when assigning additional signals.
+
+The corrected UART labels in this README refer to the chips' default UART0 functions. Historical assembly documents record the earlier custom wired arrangement; UART signals can be remapped in firmware. Those records are preserved and are not instructions to rewire the current Wi-Fi build.
