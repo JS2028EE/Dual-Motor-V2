@@ -1,3 +1,5 @@
+> **Historical controller document:** this file describes the earlier C3/S3 design. The October 16, 2026 plan uses an ESP32-WROOM-32D car with phone/computer control. See the [current project overview](https://github.com/JS2028EE/Dual-Motor-V2#readme). Earlier firmware and wiring here are not the current vehicle implementation.
+
 # Cyberpunk Controller UI
 
 ## Orientation

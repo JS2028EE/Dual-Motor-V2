@@ -1,102 +1,41 @@
 # Dual Motor V2
 
-Controller-first redesign of the dual-motor robotic car.
+An ESP32 robotic car with one motor for forward/reverse and one motor for steering.
 
-## Phase 1 — Controller
+**Current revision: V2.3.0 planning update — October 16, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical.
 
-- ESP32-C3 SuperMini
-- ESP32-S3 ES3C28P 2.8-inch 240x320 display
-- Two analog joysticks with push switches
-- Dedicated Wi-Fi link between C3 and S3
-- TCP controller protocol on port 4210
-- Landscape cyberpunk UI
-- Touch intentionally unused
+## Current plan
 
-The S3 creates the controller's private Wi-Fi access point. The C3 joins that network and exchanges controller data with the S3 over TCP. A separate router or Internet connection is not required.
+- ESP32-WROOM-32D development board as the vehicle controller.
+- L293D to control two existing 3–6 V brushed DC motors: drive and steering.
+- Manual wireless control plus planned automatic obstacle avoidance.
+- Front ultrasonic sensor, GPS, buzzer, and two white headlights.
+- Three 1.5 V cells in series for a nominal 4.5 V motor pack.
+- Separate rechargeable electronics battery; 1,000 mAh and 500 mAh batteries are available.
+- Evaluate an adjustable boost converter for a 6 V motor supply.
+- Include an on/off switch and plan charging after confirming battery chemistry and charger requirements.
+- Use GNU Octave for initial movement and electrical estimates, then replace assumptions with measurements.
 
-Vehicle ESP32, GY-GPS6MV2, L293D, motors, and vehicle power are deferred until the controller is validated.
+**Status:** architecture and initial simulation only. Final wiring, pin assignments, firmware, charging circuit, motor-current limits, and actual driving performance are not validated.
 
-## Controller roles
+## Documentation
 
-**Navigation joystick:** X/Y menu navigation; press = Select; hold = Back.
-
-**Driving joystick:** X/Y driving input; press = Brake; hold = Emergency Stop.
-
-Forward is defined as movement toward the joystick module's pin header. Axis inversion/swapping will be calibrated in firmware.
-
-## C3 reference pinout
-
-| Pin | Assignment |
+| Topic | File |
 |---|---|
-| GPIO0 | A0 |
-| GPIO1 | A1 |
-| GPIO2 | A2 |
-| GPIO3 | A3 |
-| GPIO4 | A4 / SCK |
-| GPIO5 | MISO / A5 |
-| GPIO6 | MOSI |
-| GPIO7 | SS |
-| GPIO8 | SDA / built-in LED |
-| GPIO9 | SCL |
-| GPIO10 | GPIO10 |
-| GPIO20 | RX — legacy UART, not used by Wi-Fi firmware |
-| GPIO21 | TX — legacy UART, not used by Wi-Fi firmware |
-| 3V3 | 3.3V |
-| GND | Ground |
-| 5V | 5V |
+| Signal and power block diagrams | [Block diagrams](diagrams/README.md) |
+| Parts, power, control, and measurement plan | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
+| Octave script and assumptions | [Simulation notes](simulations/README.md) |
+| Current checklist and earlier progress | [Progress](progress/PROGRESS.md) |
+| Electrical and mechanical limits | [Limitations](limitations/LIMITATIONS.md) |
+| Revision record | [V2.3.0](versions/V2.3.0.md) |
+| Earlier controller overview | [Historical README](documentation/history/CONTROLLER_README.md) |
 
-## S3 ES3C28P reference
+## First Octave result
 
-ILI9341V, 2.8-inch IPS TFT, 240x320, 4-line SPI.
+With an assumed 65 mm wheel, 120 wheel RPM, and a 1.5 s response time, the example approaches **0.41 m/s** and covers **3.47 m in 10 s**. The user ran the initial script and shared the movement plots.
 
-- LCD CS: GPIO10
-- LCD D/C: GPIO46
-- LCD SCK: GPIO12
-- LCD MOSI: GPIO11
-- LCD MISO: GPIO13
-- LCD backlight: GPIO45
-- Touch SDA: GPIO16
-- Touch SCL: GPIO15
-- Touch reset: GPIO18
-- Touch interrupt: GPIO17
-- RGB LED: GPIO42
-- Battery ADC: GPIO9
-- UART0 RX: GPIO44 — legacy controller UART, not used by Wi-Fi firmware
-- UART0 TX: GPIO43 — legacy controller UART, not used by Wi-Fi firmware
-- Expansion: GPIO2, GPIO3, GPIO14, GPIO21
+These are hypothetical results. The movement model does not yet couple battery voltage, current, driver loss, mass, or motor torque to speed. The boost comparison in the script changes electrical estimates only.
 
-## Wi-Fi controller link
+## Historical controller work
 
-| Setting | Value |
-|---|---|
-| Network owner | ESP32-S3 |
-| Mode | S3 Access Point / C3 Station |
-| SSID | DUAL-MOTOR-V2 |
-| Password | DMV2-CTRL |
-| S3 IP | 192.168.4.1 |
-| Transport | TCP |
-| Port | 4210 |
-| Expected controller | 1 C3 |
-
-The S3 starts the network automatically. The C3 automatically reconnects if the Wi-Fi or TCP connection drops.
-
-## UI
-
-Landscape orientation. Dark neon cyberpunk engineering-console aesthetic. Current UI displays navigation input, driving input, Wi-Fi controller status, vehicle connection status, and the latest controller event.
-
-## Future vehicle
-
-- Normal ESP32
-- GY-GPS6MV2
-- L293D
-- 2 x 3–6V DC motors
-- 3 x 1.5V batteries in series = 4.5V motor supply
-- 3.7V Li-ion electronics supply
-
-## Repository status
-
-This is an in-progress controller redesign. The repository contains C3 and S3 controller firmware, but `firmware/vehicle-esp32/` currently contains only a README. Vehicle control, GPS, motor power, and end-to-end emergency-stop validation are still future work. Earlier version records and wired-UART assembly notes are retained for context; current firmware communicates over Wi-Fi/TCP.
-
-The pin table lists common board labels and default peripheral roles. It is not proof that every marked analog pin supports ADC on the selected ESP32-C3. Current joystick firmware uses GPIO0, GPIO1, GPIO3, and GPIO4. Check the exact board documentation when assigning additional signals.
-
-The corrected UART labels in this README refer to the chips' default UART0 functions. Historical assembly documents record the earlier custom wired arrangement; UART signals can be remapped in firmware. Those records are preserved and are not instructions to rewire the current Wi-Fi build.
+C3/S3 firmware and earlier controller notes are retained as development history. They do not implement the current ESP32-only vehicle plan. The S3 display and joystick controller are outside the active build scope.

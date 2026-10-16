@@ -1,3 +1,33 @@
+# Current V2 progress
+
+## ESP32-only vehicle redesign — October 16, 2026
+
+- [x] Replace damaged-C3 dependency with ESP32-WROOM-32D vehicle plan.
+- [x] Select phone/computer wireless-control direction; protocol remains pending.
+- [x] Document drive motor plus steering motor arrangement.
+- [x] Document L293D, GPS, ultrasonic, buzzer, and white headlights.
+- [x] Draft signal and power block diagrams.
+- [x] Record battery/converter/capacitor inventory.
+- [x] Run initial hypothetical movement script in Octave (user screenshot).
+- [x] Add simulation assumptions, electrical estimates, and corrected speed-axis label.
+- [ ] Complete fit inspection and weigh the complete vehicle.
+- [ ] Measure wheel diameter/RPM and identify motor gearing.
+- [ ] Inspect steering centering and feedback.
+- [ ] Verify motor starting/running current against driver and converter limits.
+- [ ] Verify battery chemistry, capacity, discharge rating, and loaded voltage.
+- [ ] Test candidate 6 V boost rail and driver heat.
+- [ ] Finalize rechargeable electronics supply, charging/protection, and switches.
+- [ ] Confirm sensor/buzzer models and capacitor values.
+- [ ] Assign ESP32 pins and draw a verified wiring schematic.
+- [ ] Run the updated saved Octave script.
+- [ ] Build a movement model that responds to voltage, torque, and mass.
+- [ ] Implement ESP32 vehicle firmware and manual-control app/protocol.
+- [ ] Test stop behavior, obstacle sensing, and automatic mode.
+
+## Historical controller progress
+
+The following checklist records the earlier C3/S3 design. It is retained as history; its pending tasks are outside the active vehicle plan.
+
 # Progress
 
 ## Phase 1 — Controller
@@ -35,3 +65,4 @@
 ## Phase 2 — Vehicle
 
 Deferred.
+
