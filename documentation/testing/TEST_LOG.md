@@ -273,3 +273,18 @@ Keep this gear setup fixed for the battery baseline and bench-source comparison.
 October 17, 2026. User reports CV with wheels lifted, including drive/steer activity. On the ground, driving alone reaches CC and driving plus steering also stays in CC; steering remains weak. Actual set current limit, loaded voltage/current, gear configuration details and exact flashed pulse were not supplied. This identifies source current limiting under the reported ground load; it does not prove the original battery was the sole cause. Increasing the bench limit gradually toward the previously agreed 0.60 A total ceiling was suggested, but no new setting/result is confirmed here.
 
 At user request, current test code adds USB Serial commands and command-state logs. Pulse remains 150 ms. No claimed voltage/current sensing or automatic power allocation was added. See [Serial guide](SERIAL_CONTROL.md). Host tests pass; actual ESP32-core compilation and serial hardware verification remain pending.
+
+
+## Test 13 — Bench-source improvement reported; start combined 200 ms trial
+
+October 17, 2026. User reports the Serial firmware compilation issue is resolved. With the bench source at 6 V and a reported 0.60 A setting, driving is described as working well, but the user considers the 150 ms steering time insufficient. User identifies source capability and pulse duration as the likely combined causes and requests the longer pulse.
+
+The user also reports an operating-current figure of 0.55 A. Unit correction: 0.55 A = 550 mA, not 55 mA. It is not yet established whether 0.55 A was an actual live output-current measurement, a current-limit setting, or a peak/steady value, nor whether it referred to driving alone or simultaneous steering. It is not documented as a motor rating or universal minimum. Actual loaded voltage, CV/CC at the improved setting, quantitative steering travel and source current trace were not supplied.
+
+The reported improvement supports investigating source capability, but does not establish all power issues solved, eliminate driver/mechanical constraints, or specify a suitable portable battery. Bench capability does not directly translate to battery/boost capability.
+
+At user request, current STEER_PULSE_MS is restored to 200 ms for Test 3. USB Serial and BLE controls, command-state logs, drive latch, reversed drive mapping, steering duty 128/255 (~50%), PWM frequency, stop behavior and startup speed remain unchanged. No automatic steering priority or drive duty reduction was added. Supply remains the previously agreed 6 V with a maximum 0.60 A total bench limit for this supervised test; no additional current/voltage increase was requested or implemented.
+
+Both host pulse/drive and USB/BLE tests passed at 200 ms. The serial test now derives its timing from the actual sketch constant. Full ESP32-core compilation of this new revision and Test 3 hardware results remain pending.
+
+Next: use the same bench wiring, gear setup, starting angle, capacitor arrangement and surface/load as the 150 ms bench trial. Compare steering travel with driving off/on, lifted/on ground, noise duration and brief driving slowdown. Record actual supply voltage/current and CV/CC where available. A longer pulse helps only while movement can continue; stop if binding or a mechanical end stop prevents movement. Portable supply selection remains future work.

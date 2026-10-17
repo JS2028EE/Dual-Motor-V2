@@ -10,14 +10,14 @@ Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No C3/S3 controller and no ext
 |---|---|
 | `forward` | Drive remains forward until changed/stopped; electrical polarity reversed from prior sketch |
 | `back` | Drive remains backward until changed/stopped; electrical polarity reversed from prior sketch |
-| `left` | One 150 ms left steering pulse, then steering bridge disabled |
-| `right` | One 150 ms right steering pulse, then steering bridge disabled |
+| `left` | One 200 ms left steering pulse, then steering bridge disabled |
+| `right` | One 200 ms right steering pulse, then steering bridge disabled |
 | `speed_0`–`speed_100` | Integer drive-duty setting; 0 stops both |
 | `stop` | Disables both bridges, clears pending steering and drive, re-arms steering |
 
 Initial drive setting remains100%, with both motors stopped at startup. Drive stays latched with no command timeout. Steering PWM remains128/255 (about50%), and both channels remain1 kHz: no voltage, steering-duty, or frequency increase is included.
 
-The 150 ms limit starts when steering is actually energized, after the short command-transition delay. It is an uncalibrated candidate selected for the source-only Test 2 comparison, not proof of full wheel travel. Same-side repeat messages are ignored during and after the pulse, so a held/repeated button cannot continuously extend steering. Send the opposite direction or `stop` before requesting a new same-side pulse. Forward/back and speed changes do not re-arm completed steering. Stop/disconnect clears all motion.
+The 200 ms limit starts when steering is actually energized, after the short command-transition delay. It is an uncalibrated candidate selected for the combined Test 3 comparison, not proof of full wheel travel. Same-side repeat messages are ignored during and after the pulse, so a held/repeated button cannot continuously extend steering. Send the opposite direction or `stop` before requesting a new same-side pulse. Forward/back and speed changes do not re-arm completed steering. Stop/disconnect clears all motion.
 
 ## Position is not held electrically
 
@@ -46,7 +46,7 @@ L293D pin8 ->6 V motor rail; pin16 ->5 V logic rail. Pins4/5/12/13 share load gr
 
 Lowercase `stop` is the user's emergency software command, not a hardware emergency-stop circuit. BLE disconnect, unknown command, and input overflow also stop motor requests. Coast stopping is not instantaneous mechanical braking or physical power isolation. The earlier unexpected motor-power path is not diagnosed by this code.
 
-Steering stall is the user's plausible explanation for noise/shared-load slowdown; continuous noise reduction was reported at 150 ms, while quantitative improvement and the new 150 ms result remain unmeasured. Supply limit behavior, driver heating, low-duty buzzing, and actual steering travel remain to be checked. Keep motor rail at6 V; do not interpret 50% PWM as exactly half the supply power.
+Steering stall is the user's plausible explanation for noise/shared-load slowdown; continuous noise reduction was reported at 200 ms, while quantitative improvement and the new 200 ms result remain unmeasured. Supply limit behavior, driver heating, low-duty buzzing, and actual steering travel remain to be checked. Keep motor rail at6 V; do not interpret 50% PWM as exactly half the supply power.
 
 ## Test history
 
@@ -66,9 +66,9 @@ Requires Python3 and g++. Tests passed in the assistant environment. No actual E
 
 ## Current three-test plan
 
-Default STEER_PULSE_MS is now 150 ms for Test 2. Restore 200 ms for the combined Test 3. See the [test matrix and exact capacitor wiring](../../documentation/testing/STEERING_TEST_MATRIX.md). Test 1 results are recorded; Test 2 and Test 3 results are pending.
+Default STEER_PULSE_MS is now 200 ms for Test 3, combining the bench source and longer pulse. Test 2 used 150 ms. See the [test matrix and exact capacitor wiring](../../documentation/testing/STEERING_TEST_MATRIX.md). Test 1 results are recorded; Bench-source improvement is user-reported from Test 2; Test 3 hardware results are pending.
 
 
 ## USB Serial control added
 
-The current sketch also accepts the same lowercase motor commands from Serial Monitor at 115200 baud with Newline selected. BLE is not required for USB control. Added status, help, telemetry_on and telemetry_off commands; command/output-change logs remain visible. Logs show commanded GPIO/PWM/timing only, not sensed motor voltage/current/speed. BLE connect/disconnect events stop both motors; USB unplug alone is not a detected stop. See [Serial guide](../../documentation/testing/SERIAL_CONTROL.md). Steering remains 150 ms for Test 2.
+The current sketch also accepts the same lowercase motor commands from Serial Monitor at 115200 baud with Newline selected. BLE is not required for USB control. Added status, help, telemetry_on and telemetry_off commands; command/output-change logs remain visible. Logs show commanded GPIO/PWM/timing only, not sensed motor voltage/current/speed. BLE connect/disconnect events stop both motors; USB unplug alone is not a detected stop. See [Serial guide](../../documentation/testing/SERIAL_CONTROL.md). Steering is now 200 ms for Test 3.

@@ -1,6 +1,6 @@
 # USB Serial motor control and command logs
 
-October 17, 2026. Current test sketch supports BLE and USB Serial on the original ESP32-WROOM-32D. Pulse remains 150 ms for Test 2; no GPIO, PWM frequency/duty, or drive polarity changes.
+October 17, 2026. Current test sketch supports BLE and USB Serial on the original ESP32-WROOM-32D. Pulse is now 200 ms for Test 3; no GPIO, PWM frequency/duty, or drive polarity changes.
 
 ## Use
 
@@ -8,7 +8,7 @@ Download [DualMotorV2_BLE_Pulse.ino](../../firmware/testing/DualMotorV2_BLE_Puls
 
 Commands, one line each:
 - forward / back: latch driving using the previously reversed electrical mapping.
-- left / right: one 150 ms steering pulse after the 50 ms transition guard, then steering bridge disabled.
+- left / right: one 200 ms steering pulse after the 50 ms transition guard, then steering bridge disabled.
 - speed_0 through speed_100: integer drive setting; speed_0 stops both motors.
 - stop: stop both motors and re-arm a same-side steering pulse.
 - status: print current commanded state without changing motion.
@@ -23,8 +23,8 @@ Startup speed is 100 with motors stopped. Same-side steering messages do not ext
 Example format (illustrative, not a hardware result):
 
     t=1000 rx[usb]: left
-    t=1050 src=usb speed=100 drive=-1 pwm=255 steer=-1 pwm=128 remain=150 ms
-    pins D[0,1] S[1,0]; configured pulse=150 ms; COMMANDS, not sensor readings
+    t=1050 src=usb speed=100 drive=-1 pwm=255 steer=-1 pwm=128 remain=200 ms
+    pins D[0,1] S[1,0]; configured pulse=200 ms; COMMANDS, not sensor readings
 
 - t: ESP32 uptime in milliseconds, not wall-clock time.
 - src: USB/BLE source of the latest motor command; status/help/telemetry commands do not take ownership.

@@ -1,6 +1,6 @@
 """Test USB input and mixed-source loop using actual sketch functions and mocks."""
 from pathlib import Path
-import subprocess, tempfile, sys
+import subprocess, tempfile, sys, re
 s=Path(sys.argv[1]).read_text()
 dispatch_proto=s[s.index('void dispatchCommand('):].split('{',1)[0]+';'
 parser=s.split('// BEGIN COMMAND PARSER (host-tested independently)')[1].split('// END COMMAND PARSER')[0]
@@ -49,6 +49,8 @@ struct SerialMock {
  template<class... A>void printf(const char*f,A... a){char b[512];std::snprintf(b,sizeof(b),f,a...);output+=b;}
 } Serial;
 """
+pulse_ms=int(re.search(r'constexpr uint32_t STEER_PULSE_MS=(\d+);',s).group(1))
+stubs=stubs.replace('STEER_PULSE_MS=150','STEER_PULSE_MS='+str(pulse_ms))
 tests=r"""
 int main(){
  Serial.feed("forward\n");loop();fakeTime=50;loop();
@@ -57,7 +59,7 @@ int main(){
  Serial.feed("status\r\n");loop();assert(driveRequested==-1);
  assert(Serial.output.find("not sensor readings")!=std::string::npos);
  Serial.feed("left\n");loop();fakeTime=550;loop();assert(pwm[STEER_EN]==128);
- fakeTime=700;loop();assert(pwm[STEER_EN]==0 && pwm[DRIVE_EN]==255);
+ fakeTime=550+STEER_PULSE_MS;loop();assert(pwm[STEER_EN]==0 && pwm[DRIVE_EN]==255);
  Serial.feed("speed_30\n");loop();assert(speedPercent==30 && pwm[DRIVE_EN]==77);
  Serial.feed("stop\n");loop();assert(pwm[DRIVE_EN]==0);
  Serial.feed("for");loop();assert(driveRequested==0);

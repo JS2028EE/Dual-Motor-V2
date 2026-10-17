@@ -65,3 +65,8 @@ Only firmware timing and documentation have changed. No capacitor, supply settin
 ## Test 1 result update
 
 The user reports steering works with wheels lifted and driving off, but barely moves with driving on even while lifted. Ground contact further limits steering, and driving briefly slows during commands. Timing alone has not met the loaded-steering requirement. See [Test 11](TEST_LOG.md#test-11--test-1-duration-trial-unloaded-steering-improves-loaded-steering-remains-weak) for the separated conditions, hypotheses and proposed fixes. Capacitor installation and exact flashed duration were not reconfirmed. Source-only Test 2 must use 150 ms; the current default is 200 ms and corresponds to Test 3 when used with the bench source.
+
+
+## Test 2 report and Test 3 start
+
+User reports improved driving with the 6 V bench source at a 0.60 A setting, while 150 ms steering remains insufficient. The reported 0.55 A (550 mA) figure has not been classified as a live reading versus limit setting. Current default firmware is restored to 200 ms for Test 3; retain the same source, gears, surface/load, initial angle and capacitor setup. Test 3 results are pending. See [Test 13](TEST_LOG.md#test-13--bench-source-improvement-reported-start-combined-200-ms-trial). Earlier default-timing instructions above describe earlier revisions.
