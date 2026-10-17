@@ -4,7 +4,11 @@ Updated: October 17, 2026. Status: planning draft; verify actual boards before w
 
 This document assigns power terminals and supply rails only. GPIO, analog inputs, UART, PWM, and sensor signals will be planned separately. The motor driver here is the **L293D** from the current parts list. If the actual part is L298N, its power pinout must be redone.
 
-## 1. Supply rails
+## New battery allocation — supersedes older source assignments below
+
+October 17: select the 1,000 mAh rechargeable cell for the motor branch and the smaller cell (previously 500 mAh, label to confirm) for electronics. The motor branch still targets 6 V and electronics 5 V. **Portable charging/protection and converter load validation are pending.** Use [battery reallocation](../power/BATTERY_REALLOCATION.md) as the current decision. The three-cell motor-pack wiring and larger-electronics-cell assignment below are retained as earlier setup history, not instructions for the new motor cell. Do not bypass protection or connect both cells to one single-cell charger.
+
+## 1. Earlier supply rails
 
 | Rail / net | Voltage | Source | Destination |
 |---|---|---|---|

@@ -288,3 +288,8 @@ At user request, current STEER_PULSE_MS is restored to 200 ms for Test 3. USB Se
 Both host pulse/drive and USB/BLE tests passed at 200 ms. The serial test now derives its timing from the actual sketch constant. Full ESP32-core compilation of this new revision and Test 3 hardware results remain pending.
 
 Next: use the same bench wiring, gear setup, starting angle, capacitor arrangement and surface/load as the 150 ms bench trial. Compare steering travel with driving off/on, lifted/on ground, noise duration and brief driving slowdown. Record actual supply voltage/current and CV/CC where available. A longer pulse helps only while movement can continue; stop if binding or a mechanical end stop prevents movement. Portable supply selection remains future work.
+
+
+## Test 14 — Combined driving/steering success reported
+
+October 17, 2026. User reports Test 3 works: 200 ms steering with the 6 V bench source set to a 0.60 A limit supports driving and steering together. Displayed current reportedly did not exceed approximately 0.55 A during observed interactions, now described as a live reading; fast peaks and universal minimum current are not established. Exact CV/CC trace, loaded voltage, surface/angle metrics and capacitor configuration were not supplied. See [full milestone](DRIVING_STEERING_MILESTONE.md) for the debugging sequence, battery reallocation, attribution, limits and deferred UI/GPS/accessory work. Session ends with power-down/cleanup. No further code or feature changes in this update.

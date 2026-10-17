@@ -4,25 +4,33 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 
 **Current revision: V2.7.0 pulse-steering test revision — October 17, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical. **No C3 or S3 controller is used or required in the active build.** The block diagrams and current decision record define the plan.
 
+## Latest milestone — October 17
+
+**Jay reports successful driving and steering together using the 6 V bench source (0.60 A limit) and 200 ms steering pulse.** Displayed current reportedly stayed at or below approximately 0.55 A during observed interactions; this is not a measured transient peak or universal motor rating. See [complete results and debugging record](documentation/testing/DRIVING_STEERING_MILESTONE.md).
+
+New selected battery allocation: **1,000 mAh cell for motors; smaller cell (previously 500 mAh, exact label to confirm) for electronics.** Portable integration, protection/charging and boost load capability remain pending. See [battery decision](documentation/power/BATTERY_REALLOCATION.md). Control UI, GPS speed/map, automatic mode and accessories are next ideas, not implemented features.
+
 ## Current plan
 
 - ESP32-WROOM-32D development board as the vehicle controller.
 - L293D to control two existing 3–6 V brushed DC motors: drive and steering.
 - Manual wireless control plus planned automatic obstacle avoidance.
 - Front ultrasonic sensor, GPS, buzzer, and two white headlights.
-- Three 1.5 V cells in series for a nominal 4.5 V motor pack.
-- Separate rechargeable electronics battery; 1,000 mAh and 500 mAh batteries are available.
+- New motor source selection: 1,000 mAh rechargeable cell -> dedicated 6 V boost; earlier three-cell pack is test history.
+- Smaller rechargeable cell for electronics -> separate 5 V boost; previously identified as 500 mAh, exact label to confirm.
 - Use two independent boost converters: 6 V motor rail and 5 V electronics rail; complete integration and load capability remain unverified.
 - Use a TP4056-style charger for the electronics cell and two on/off switches, one per supply branch (reported three-terminal switch: likely SPDT used for an SPST function); charge with both load switches off.
 - Use GNU Octave for initial movement and electrical estimates, then replace assumptions with measurements.
 
-**Status:** planning, reported drive-motor bench tests, and three hypothetical MATLAB/Octave examples. Electronics switch/LED power-up is now user-reported; its electrical validation, full vehicle firmware, GPS/map/API integration, steering, charging thermal behavior, and load capability are not validated. The motor unexpectedly ran with its motor-power switch off during a USB-powered test; that path remains unresolved.
+**Status:** successful combined bench-powered driving/steering is user-reported; portable-power integration and complete vehicle functions remain pending. Earlier tests and hypothetical MATLAB/Octave examples are retained below as history. Electronics switch/LED power-up is now user-reported; its electrical validation, full vehicle firmware, GPS/map/API integration, steering, charging thermal behavior, and load capability are not validated. The motor unexpectedly ran with its motor-power switch off during a USB-powered test; that path remains unresolved.
 
 ## Documentation
 
 | Topic | File |
 |---|---|
 | Active design decisions | [Decisions](documentation/DECISIONS.md) |
+| Successful combined bench test | [Milestone and next steps](documentation/testing/DRIVING_STEERING_MILESTONE.md) |
+| New battery allocation | [Battery reallocation](documentation/power/BATTERY_REALLOCATION.md) |
 | Tests, notes, and observations | [Test log](documentation/testing/TEST_LOG.md) |
 | Steering reasoning, proposed fixes, and engineering reflection | [Steering investigation and reflection](documentation/testing/STEERING_REFLECTION.md) |
 | Power terminals, rails, charger, and switches | [Power pinout plan](documentation/pin-configuration/POWER_PINOUT.md) |
@@ -43,7 +51,9 @@ With an assumed 65 mm wheel, 120 wheel RPM, and a 1.5 s response time, the examp
 
 These are hypothetical results. The movement model does not yet couple battery voltage, current, driver loss, mass, or motor torque to speed. The boost comparison in the baseline script changes electrical estimates only. The latest power/control model adds a simplified voltage-to-RPM assumption; it still does not model torque or mass.
 
-## Latest reported tests and model
+## Earlier test reports and models
+
+The latest combined success and battery selection above supersede earlier pending-result/default-timing statements in this historical list.
 
 - New [steering test matrix](documentation/testing/STEERING_TEST_MATRIX.md): capacitor baseline, 200 ms timing trial, 6 V bench-source comparison at 150 ms, then combined 200 ms/bench test. No new hardware result yet.
 

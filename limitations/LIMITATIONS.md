@@ -65,3 +65,8 @@ See [BLE test code](../firmware/testing/README.md). Both channels use 1 kHz PWM;
 ## Pulse-steering revision limits
 
 The user's stall explanation is plausible, not a confirmed physical diagnosis. Current [pulse test code](../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) reverses drive polarity and keeps forward/back latched. Steering runs for150 ms at unchanged approximately 50% duty then disables; repeated same-side messages cannot extend it. That is open-loop timing, not position control. Wheels may spring back or move after disable. Same-side re-trigger requires opposite command or stop. Hardware validation, actual travel time, current savings, noise reduction, and shared-load performance remain pending. Host control tests passed; actual ESP32 build/radio tests were not performed.
+
+
+## Latest combined test and battery transition — October 17
+
+User reports successful driving/steering with 200 ms pulses on a 6 V bench supply limited to 0.60 A, with displayed current up to about 0.55 A. This supersedes earlier statements that practical combined steering has not yet worked; it does not establish transient current, thermal endurance, actual regulated voltage during every event, or all surfaces/loads. New portable selection is a 1,000 mAh motor cell and smaller electronics cell; cell discharge/protection/charge compatibility and converters remain unvalidated. The battery-side current can exceed the 6 V output current. Exact smaller-cell capacity and final capacitor installation remain unconfirmed. No app/site/map/GPS speed or autonomous behavior has been implemented. Earlier switch-off motion and charger heating remain unresolved. See [milestone](../documentation/testing/DRIVING_STEERING_MILESTONE.md).

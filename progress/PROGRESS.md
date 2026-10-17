@@ -2,6 +2,17 @@
 
 Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and [current decisions](../documentation/DECISIONS.md). No C3/S3 controller is part of this build.
 
+## Latest milestone
+
+- [x] User reports successful combined driving/steering at 6 V bench source with 0.60 A limit and 200 ms pulse; display observed up to about 0.55 A.
+- [x] Add working USB Serial commands/logs alongside BLE; prior compilation issue user-reported resolved.
+- [x] Record sequential tests, partial failures, lighter replacement gears and successful combined configuration.
+- [x] Select 1,000 mAh cell for motors and smaller cell for electronics; not yet load/charge validated.
+- [ ] Validate new portable battery/boost/protection/charging arrangement.
+- [ ] Design simultaneous drive/steering UI, then integrate GPS velocity/map, sensors, buzzer and lights as separately tested features.
+
+See [milestone](../documentation/testing/DRIVING_STEERING_MILESTONE.md) and [battery allocation](../documentation/power/BATTERY_REALLOCATION.md). Earlier checked/unchecked notes below preserve prior stages and do not override this latest status.
+
 ## Documented / user-reported work
 
 - [x] Select ESP32-WROOM-32D with phone/computer control.

@@ -23,12 +23,14 @@ Feedback is conditional. A two-wire steering motor does not report steering angl
 
 ## Power
 
+Latest source selection: 1,000 mAh motor cell and smaller electronics cell. Diagram shows intended load topology, not a completed battery/charger wiring schematic. See [battery decision](../documentation/power/BATTERY_REALLOCATION.md). Bench driving/steering success does not validate portable conversion or charging.
+
 Detailed terminal assignments: [power pinout plan](../documentation/pin-configuration/POWER_PINOUT.md).
 
 ```mermaid
 flowchart TD
     USB["External USB 5 V"] --> Charger["TP4056-style protected charging module"]
-    Cell["One Li-ion cell: battery leads to B+ and B-"] --- Charger
+    Cell["Smaller electronics cell: label to confirm"] --- Charger
     Charger -->|"OUT+"| SWE["SW-E: electronics on/off"]
     SWE --> BoostE["Separate electronics boost: 5.0 V"]
     BoostE --> Rail5["5 V rail"]
@@ -37,8 +39,8 @@ flowchart TD
     Rail5 -->|"5 V to pin 16"| DriverPower
     Rail5 --> Loads["Compatible 5 V loads"]
 
-    AA["Three 1.5 V cells in series: 4.5 V nominal"] --> SWM["SW-M: motor on/off"]
-    SWM --> BoostM["Motor boost: candidate 6.0 V"]
+    AA["1,000 mAh motor cell: protected load output"] --> SWM["SW-M: motor on/off"]
+    SWM --> BoostM["Motor boost: 6.0 V target"]
     BoostM -->|"6 V to pin 8"| DriverPower["L293D"]
     BoostM --> Cap["Bulk capacitor across motor rail and ground"]
     DriverPower --> Motors["Outputs 3/6 drive; 11/14 steering"]
@@ -50,11 +52,11 @@ flowchart TD
     GND --- BoostM
 ```
 
-Ground lines indicate shared load returns: AA negative, both converter returns, ESP32 GND, L293D ground pins, and accessory grounds join SYSTEM_GND. Motor return wiring goes directly to the motor battery negative rather than through the ESP32 board. Raw rechargeable-cell B- stays only on the battery side of the protection circuit.
+Ground lines indicate shared load returns: protected motor-cell load negative, both converter returns, ESP32 GND, L293D ground pins, and accessory grounds join SYSTEM_GND. Motor return wiring goes directly to the motor branch protected load return rather than through the ESP32 board. Raw rechargeable-cell B- stays only on the battery side of the protection circuit.
 
 Two boost stages are selected; physical identities and complete battery-powered integration remain unverified. A buck-only converter cannot supply either voltage increase. Positive rails remain separate. GPS rail and exact ESP32 development-board input must be confirmed.
 
-Both on/off switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The ordinary three-cell motor pack is not connected to the charger.
+Both on/off switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The earlier ordinary three-cell pack is superseded by a selected 1,000 mAh motor cell. A separate suitable charging/protection arrangement for that motor cell is not yet specified; do not join cells on one charger.
 
 The motor-only test GPIOs and commands are recorded in the [BLE testing guide](../firmware/testing/README.md); sensor/accessory signal wiring remains pending. This power architecture is a draft, pending actual module, current, charge-rate, and mixed-power-state checks.
 
@@ -66,4 +68,4 @@ This diagram shows intended final wiring. USB-fed ESP32 5 V and fixed HIGH drive
 
 The motor ran with its supply switch off during the reported bench test. That is an unresolved observation, not intended behavior depicted by this diagram. See [test log](../documentation/testing/TEST_LOG.md) and [limitations](../limitations/LIMITATIONS.md). GPIO test code now exists, but power isolation and startup/disconnect/stop performance are not electrically validated.
 
-Latest capacitor observation: the user reports1,000 uF/50 V and pre-existing motor ceramics; audible noise persisted. Earlier supply planning named 100 uF. The diagram shows recommended bulk-filter placement, not proof of the actual installation. See [noise/load investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md). Architecture remains unchanged.
+Latest capacitor observation: the user reports1,000 uF/50 V and pre-existing motor ceramics; audible noise persisted. Earlier supply planning named 100 uF. The diagram shows recommended bulk-filter placement, not proof of the actual installation. See [noise/load investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md). The latest battery allocation supersedes the earlier three-cell source; protection/charging details are pending.

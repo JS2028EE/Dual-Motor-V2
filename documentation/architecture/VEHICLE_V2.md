@@ -2,6 +2,10 @@
 
 Updated October 17, 2026. This plan supersedes the handheld-controller-first scope.
 
+## Latest update
+
+Successful combined bench-powered driving/steering is user-reported at 6 V, source limit 0.60 A, and 200 ms steering pulse. Select 1,000 mAh rechargeable cell for motors and smaller cell for electronics; validation/charging/protection remain pending. See [milestone](../testing/DRIVING_STEERING_MILESTONE.md) and [new battery allocation](../power/BATTERY_REALLOCATION.md). Earlier three-cell source and larger-electronics-cell assumptions below describe previous planning/models, not the new allocation. Current motor firmware supports USB Serial and BLE; the complete UI and sensor integration remain future work.
+
 ## Power terminal plan
 
 See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two switched positive branches (likely SPDT switches used for SPST on/off), separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. The six motor-test GPIO assignments and BLE commands are recorded in the [testing guide](../../firmware/testing/README.md); sensor/accessory signal assignments remain deferred. Two boost stages are required by the proposed rails; module identities and complete integration remain unverified.

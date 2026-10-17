@@ -10,8 +10,8 @@ Updated October 17, 2026. The [block diagrams](../diagrams/README.md) define the
 | Commands | BLE Controller app selected for first motor test; Nordic UART text protocol recorded; full phone/computer integration unvalidated |
 | Motors | One forward/reverse drive motor and one steering motor, both existing 3–6 V brushed DC |
 | Driver | L293D, not L298N |
-| Motor power | Three 1.5 V cells in series -> on/off switch -> dedicated boost at 6 V -> L293D pin 8 |
-| Electronics power | One compatible rechargeable cell -> protected TP4056 OUT -> on/off switch -> separate boost at 5 V |
+| Motor power | New selection: 1,000 mAh rechargeable cell -> protection/charging arrangement to verify -> switch -> dedicated 6 V boost -> L293D pin 8; portable load test pending |
+| Electronics power | Smaller rechargeable cell (previously 500 mAh; label to confirm) -> compatible protected charger OUT -> switch -> separate 5 V boost |
 | 5 V loads | Verified ESP32 development-board input, L293D pin 16, and compatible accessories |
 | 3.3 V loads | Compatible low-current loads from the ESP32 board regulator within its current budget |
 | Ground | Common load ground is charger OUT-, not an external bridge to raw cell B- |
@@ -42,6 +42,11 @@ V2.0.0–V2.2.0 and controller-c3/controller-s3 directories describe an abandone
 
 The user requested integer speed_N values, initial 100 drive duty, independently latched driving and steering, and lowercase stop for both motors. These behaviors are recorded as [testing code](../firmware/testing/README.md), not validated production control. No steering limit cutoff or command timeout is present in the latest latched version. Drive buzzing near30, steering noise, and drive slowdown during steering remain unresolved. The latest reported supply-capacitor experiment names 1,000 uF/50 V; location/polarity are unverified.
 
-## Current pulse-steering revision — October 17
+## Earlier pulse-steering revision — October 17
 
 Use the [pulse-steering sketch](../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). Drive remains latched, with its electrical forward/back mapping reversed for the user's motor wiring. Left/right trigger one150 ms pulse at unchanged steering duty/frequency, then disable steering. Repeats in the same direction are ignored until opposite or stop. The timing is uncalibrated; no active position hold or limit feedback exists. No voltage increase, power-architecture change, or verified noise/energy improvement is recorded.
+
+
+## Latest decision and successful combined test
+
+User reports successful simultaneous driving/steering with 200 ms pulses and 6 V bench source at 0.60 A limit; approximately 0.55 A max observed on its display. See [milestone](testing/DRIVING_STEERING_MILESTONE.md). Current firmware supports USB Serial plus BLE, fixed ~50% steering duty and 200 ms cutoff; no automatic drive-priority or website/app was added. Select 1,000 mAh cell for motors and smaller cell for electronics; see [battery allocation](power/BATTERY_REALLOCATION.md). Do not infer discharge capability from mAh. Portable source, cell protection/charging integration, transient/thermal validation and earlier switch-off power path remain open. Better simultaneous control UI and GPS speed/map are deferred next work; speed-control policy remains undecided.
