@@ -2,6 +2,10 @@
 
 Updated October 16, 2026. This plan supersedes the handheld-controller-first scope.
 
+## Power terminal plan
+
+See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two SPST switches, separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. GPIO/signal assignments are deferred. Two boost stages are required by the proposed rails; the second module is not confirmed.
+
 ## Goal and control
 
 Use one ESP32-WROOM-32D development board, one drive motor, and one steering motor. A phone or computer will provide manual commands through Wi-Fi or Bluetooth. The app, protocol, command format, and timeout are still to be selected.
@@ -29,7 +33,7 @@ Planned stop behavior: disable drive on startup, manual stop, stale manual-contr
 | Bulk capacitor | 100 uF, 50 V electrolytic | Candidate near driver motor supply |
 | Extra capacitor | 10 uF, 50 V electrolytic | Available; placement to be decided |
 | Ceramics | User reports 22 pF and 104 pF | Record as reported; not selected for motor suppression |
-| Charging and switches | Rechargeable electronics supply and on/off control | Circuit design pending |
+| Charging and switches | TP4056-style protected charger and two SPST load switches | Terminal plan documented; charge current/protection and ratings pending |
 | Magnetic sensor | Available | Deferred until a purpose is chosen |
 
 Battery capacities are mAh, not current ratings. Do not combine the 500 mAh and 1,000 mAh cells in this plan; they are alternative electronics-battery candidates.

@@ -13,7 +13,7 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 - Three 1.5 V cells in series for a nominal 4.5 V motor pack.
 - Separate rechargeable electronics battery; 1,000 mAh and 500 mAh batteries are available.
 - Evaluate an adjustable boost converter for a 6 V motor supply.
-- Include an on/off switch and plan charging after confirming battery chemistry and charger requirements.
+- Use a TP4056-style charger for the electronics cell and two SPST switches, one per supply branch; charge with both load switches off.
 - Use GNU Octave for initial movement and electrical estimates, then replace assumptions with measurements.
 
 **Status:** architecture and initial simulation only. Final wiring, pin assignments, firmware, charging circuit, motor-current limits, and actual driving performance are not validated.
@@ -22,6 +22,7 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 
 | Topic | File |
 |---|---|
+| Power terminals, rails, charger, and switches | [Power pinout plan](documentation/pin-configuration/POWER_PINOUT.md) |
 | Signal and power block diagrams | [Block diagrams](diagrams/README.md) |
 | Parts, power, control, and measurement plan | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
 | Octave script and assumptions | [Simulation notes](simulations/README.md) |

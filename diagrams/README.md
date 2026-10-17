@@ -23,29 +23,37 @@ Feedback is conditional. A two-wire steering motor does not report steering angl
 
 ## Power
 
+Detailed terminal assignments: [power pinout plan](../documentation/pin-configuration/POWER_PINOUT.md).
+
 ```mermaid
 flowchart TD
-    Cells["Three 1.5 V cells: 4.5 V nominal"] --> SwitchM["Motor power switch"]
-    SwitchM --> Boost["Boost converter: candidate 6 V output"]
-    Boost --> MotorRail["Motor rail: measure under load"]
-    MotorRail --> L293["L293D motor supply"]
-    MotorRail --> Cap["100 uF electrolytic across supply and ground"]
-    L293 --> Motors["Drive and steering motors"]
+    USB["External USB 5 V"] --> Charger["TP4056-style protected charging module"]
+    Cell["One Li-ion cell: battery leads to B+ and B-"] --- Charger
+    Charger -->|"OUT+"| SWE["SW-E: SPST electronics switch"]
+    SWE --> BoostE["Separate electronics boost: 5.0 V"]
+    BoostE --> Rail5["5 V rail"]
+    Rail5 --> ESP["ESP32 board verified 5 V input"]
+    ESP --> Rail3["3.3 V rail: compatible low-current loads"]
+    Rail5 --> Logic["L293D pin 16: logic supply"]
+    Rail5 --> Loads["Compatible 5 V loads"]
 
-    Charge["Compatible charger and protection: selection pending"] -.-> Battery["Separate rechargeable electronics battery"]
-    Battery --> SwitchE["Electronics power switch"]
-    SwitchE --> Reg["Regulated 5 V supply: verify board compatibility"]
-    Reg --> ESP["ESP32 development-board 5 V input"]
-    Reg --> Logic["L293D logic supply"]
-    Reg --> Loads["Compatible sensor and accessory rails"]
+    AA["Three 1.5 V cells in series: 4.5 V nominal"] --> SWM["SW-M: SPST motor switch"]
+    SWM --> BoostM["Motor boost: candidate 6.0 V"]
+    BoostM --> VM["L293D pin 8: motor supply"]
+    BoostM --> Cap["100 uF across motor rail and ground"]
+    VM --> Motors["Two motor bridges: drive and steering"]
 
-    Ground["Common ground; positive rails remain separate"] --- Cells
-    Ground --- Battery
-    Ground --- L293
-    Ground --- ESP
-    Ground --- Loads
+    GND["SYSTEM_GND: charger OUT-, not B-"] --- AA
+    GND --- ESP
+    GND --- VM
+    GND --- BoostE
+    GND --- BoostM
 ```
 
-The candidate boost path replaces the unresolved direct 4.5 V motor path; it is not yet a validated supply. GPS and other module rails must match their exact breakout requirements. The ESP32 module itself uses 3.3 V; the 5 V input shown is for a suitable development board regulator.
+Ground lines indicate shared load returns: AA negative, both converter returns, ESP32 GND, L293D ground pins, and accessory grounds join SYSTEM_GND. Motor return wiring goes directly to the motor battery negative rather than through the ESP32 board. Raw rechargeable-cell B- stays only on the battery side of the protection circuit.
 
-The charger is a future design item. A boost or buck converter is not a battery charger. Do not charge ordinary non-rechargeable cells. Charger load sharing and operation while charging remain unresolved.
+Two boost stages are required; only one module has been shown. A buck-only converter cannot supply either voltage increase. Positive rails remain separate. GPS rail and exact ESP32 development-board input must be confirmed.
+
+Both SPST switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The ordinary three-cell motor pack is not connected to the charger.
+
+GPIOs and analog/digital signal wiring will be assigned separately. This power architecture is a draft, pending actual module, current, charge-rate, and mixed-power-state checks.

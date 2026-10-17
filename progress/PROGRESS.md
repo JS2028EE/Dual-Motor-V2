@@ -10,6 +10,9 @@
 - [x] Record battery/converter/capacitor inventory.
 - [x] Run initial hypothetical movement script in Octave (user screenshot).
 - [x] Add simulation assumptions, electrical estimates, and corrected speed-axis label.
+- [x] Draft separate power pinout with TP4056, two SPST switches, and OUT- system ground.
+- [ ] Confirm two boost modules for independent 5 V electronics and candidate 6 V motor rails.
+- [ ] Verify TP4056 protection topology and charge-current setting for selected cell.
 - [ ] Complete fit inspection and weigh the complete vehicle.
 - [ ] Measure wheel diameter/RPM and identify motor gearing.
 - [ ] Inspect steering centering and feedback.
