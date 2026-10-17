@@ -24,6 +24,7 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 |---|---|
 | Active design decisions | [Decisions](documentation/DECISIONS.md) |
 | Tests, notes, and observations | [Test log](documentation/testing/TEST_LOG.md) |
+| Steering reasoning, proposed fixes, and engineering reflection | [Steering investigation and reflection](documentation/testing/STEERING_REFLECTION.md) |
 | Power terminals, rails, charger, and switches | [Power pinout plan](documentation/pin-configuration/POWER_PINOUT.md) |
 | Signal and power block diagrams | [Block diagrams](diagrams/README.md) |
 | Parts, power, control, and measurement plan | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
