@@ -2,6 +2,10 @@
 
 October 17, 2026. This record summarizes Jay's observations, explanation, proposed fixes, and learning. The first-person section is an edited paraphrase of his explanation, not a verbatim quotation. The admissions discussion is a hypothetical interpretation, not an admissions evaluation or predicted outcome.
 
+## Latest hardware update
+
+A later trial on October 17 reported that continuous steering noise stopped with the 150 ms cutoff, driving improved by observation, but steering remains weak and brief noise persists. See [Test 9](TEST_LOG.md#test-9--user-reported-hardware-results-after-150-ms-steering-cutoff). Earlier pending-validation statements below describe the state when this reflection was first written; measured current, voltage, speed, angle, and energy results are still pending. No pulse-duration increase has been implemented.
+
 ## My observation and explanation
 
 I noticed that the driving motor slowed down when I also pressed left or right. The steering motor made noise, and the driving motor also made noise at a low speed setting around 30. Adding a capacitor did not eliminate the noise.

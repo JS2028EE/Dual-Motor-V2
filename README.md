@@ -45,10 +45,12 @@ These are hypothetical results. The movement model does not yet couple battery v
 
 ## Latest reported tests and model
 
-- Current [pulse-steering test sketch](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) implements the user's requested steering-power cutoff while preserving latched drive. Stall/noise diagnosis and improvement remain unverified; unpowered steering position is not guaranteed.
+- **Latest hardware report:** the 150 ms steering cutoff eliminated continuous steering noise and driving improved by observation. Steering remains weak; brief steering noise, low-speed drive noise, and sideways travel remain. Current/voltage and speed are unmeasured. A 200–230 ms pulse is proposed only; firmware remains at 150 ms. See [Test 9](documentation/testing/TEST_LOG.md#test-9--user-reported-hardware-results-after-150-ms-steering-cutoff).
+
+- Current [pulse-steering test sketch](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) implements the user's requested steering-power cutoff while preserving latched drive. Continuous-noise improvement is now user-reported; stall diagnosis and quantitative performance remain unverified. Unpowered steering position is not guaranteed.
 
 - BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched drive, bounded150 ms steering pulses, reversed drive polarity, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
-- Steering noise and drive noise around speed 30 persist; latest 1,000 uF/50 V capacitor experiment did not eliminate sound. Drive slows when steering activates. Causes remain unmeasured.
+- Brief steering noise and drive noise around speed 30 persist; the earlier 1,000 uF/50 V capacitor experiment did not eliminate sound. The latest pulse trial had no electrolytic capacitor installed. Drive slows when steering activates. Causes remain unmeasured.
 
 - Electronics supply: user reports correcting an overlapping battery/wire connection, working switch, and ESP32 power LED. Accurate output voltage, load capability, and heating remain unverified.
 - New electronics-chain model: stage voltages, battery versus output current, switch/protection/boost losses, and a separate charging-loss example.

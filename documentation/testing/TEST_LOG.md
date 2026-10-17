@@ -167,3 +167,43 @@ The user shared both output figures from electronics_power_chain.m: regulated 5 
 | Driver/motor current, wheel RPM | Unmeasured |
 | Final mass, wheel size, steering feedback | Unmeasured/unconfirmed |
 | Shutdown, disconnect and automatic-mode behavior | Unvalidated |
+
+
+## Test 9 — User-reported hardware results after 150 ms steering cutoff
+
+October 17, 2026. First reported physical trial of the pulse-steering revision. The report indicates the revised behavior was tried on hardware; the build log, exact flashed source, loaded rail voltage, and current readings were not supplied.
+
+### Reported results
+
+- Continuous steering noise stopped. Previously one left/right command caused ongoing noise; now noise is brief during steering activation.
+- Steering remains very weak and does not turn adequately during the 150 ms pulse.
+- Driving is reported faster/more usable during steering than with continuous steering. A brief slowdown may remain while steering is powered.
+- User estimated the brief disturbance at approximately 175–200 ms by observation. This is not instrumented timing and does not change the configured 150 ms energization time; the firmware also includes a direction-transition guard.
+- Driving reportedly takes roughly three seconds to approach a steady speed; no measured RPM, distance/time trace, or acceleration data.
+- The car veers sideways. Alignment, starting wheel position, mechanical play, friction, and steering position retention remain to be inspected.
+- Low-speed driving noise around speed_30 remains. User proposes insufficient torque against the mechanism/load; PWM excitation, friction, supply limits and driver losses remain alternatives or contributing causes.
+- Both motors reportedly have ceramic capacitors marked 104. Under the usual three-digit code this means 100,000 pF = 100 nF = 0.1 uF, not 104 pF. Actual parts were not inspected.
+- No electrolytic capacitor was installed during this particular trial. Earlier capacitor experiments are separate tests and are not contradicted by this report.
+- Motor pack is three 1.5 V cells in series, now reported around 4.3 V. Loaded voltage, boost output under load, and current remain unknown.
+
+### Interpretation
+
+The disappearance of continuous noise after a bounded command supports the claim that sustained steering energization contributed to the persistent noise. It does not independently prove a stall, quantify energy savings, or establish the cause of every remaining noise. Improved driving is user-reported, not a measured speed or power result. The mechanism does not allocate a fixed fraction of supply power to each motor.
+
+A longer pulse increases energized duration, not automatically instantaneous current, voltage, or torque. User proposes 200–230 ms; these are about 1.33–1.53 times 150 ms, not double. Double would be 300 ms. A longer pulse may allow more travel if it is still moving, but can extend a stall if the mechanism is blocked.
+
+### Next work — proposed, not implemented
+
+Firmware remains at 150 ms; no parts, supply setting, or capacitor were changed by this documentation update. Inspect steering friction, linkage, removed gears, alignment, and load on the front wheels. Compare lifted wheels with wheels on the surface. For the same front load, tire friction can resist turning; mechanical leverage/gearing also affects available steering force. More pulse time cannot repair binding or replace missing gear reduction.
+
+Measure source current and voltage before selecting another battery or changing a supply current limit. A source's current capability/limit is not current forced into the motor. A 500 mAh rating is charge capacity, not a 500 mA maximum output rating.
+
+Proposed current measurement: with power off, black lead COM, red lead 10 A, dial DC A / 10 A. Break the positive lead feeding the motor boost, connect source-side positive to red probe and black probe to boost IN+, leaving IN- on battery negative. This inserts the meter in series and measures boost INPUT current, not individual motor current. Never place a meter in current mode across battery terminals. Follow the meter's time limits; return red lead to V-ohm-mA before measuring voltage. A normal meter may miss the 150 ms steering peak. Alternatively, a bench supply display can show total current and CV/CC mode, but may also miss a short pulse.
+
+For voltage: red lead V-ohm-mA, black COM, DC V 20 V range; measure across the battery or across motor-rail pin 8 and common ground with the load operating. Power off before moving wiring or meter jacks.
+
+Replacement 3.7 V / 500 mAh cell is only a proposal. Cell discharge rating, protection, charger compatibility and boost capability must be established. Boost conversion approximately obeys Iout = efficiency * Vin * Iin / Vout: at 3.7 V input, 5 V output and assumed 85% efficiency, Iout is about 0.63 * Iin. A voltage boost reduces available output current for a given input current; it does not create power. “5 volts” is the voltage target, not “5 milliamps.” No battery swap or new motor rail voltage has been adopted.
+
+### Outcome
+
+Partial success: continuous steering noise resolved in the reported trial; driving behavior improved by observation. Remaining work: weak steering, brief activation noise, low-duty drive noise, sideways travel, and supply/load measurements. Actual power savings, steering angle, stall current and cause of remaining weakness are not yet verified.
