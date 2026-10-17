@@ -93,7 +93,7 @@ Command parseCommand(std::string s) {
 constexpr uint8_t DRIVE_EN=25, DRIVE_A=26, DRIVE_B=27;
 constexpr uint8_t STEER_EN=14, STEER_A=32, STEER_B=33;
 constexpr uint32_t REVERSE_DELAY_MS=50;
-constexpr uint32_t STEER_PULSE_MS=200; // Test 1/3 candidate; use 150 for baseline/Test 2.
+constexpr uint32_t STEER_PULSE_MS=150; // Test 2: source-only comparison. Restore 200 for Test 3.
 constexpr uint32_t STEER_DUTY=128; // Preserve previous ~50% steering PWM.
 constexpr char SERVICE[]="6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr char RX_UUID[]="6e400002-b5a3-f393-e0a9-e50e24dcca9e";
