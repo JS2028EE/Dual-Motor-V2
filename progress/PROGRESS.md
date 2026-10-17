@@ -1,71 +1,51 @@
 # Current V2 progress
 
-## ESP32-only vehicle redesign — October 16, 2026
+Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and [current decisions](../documentation/DECISIONS.md). No C3/S3 controller is part of this build.
 
-- [x] Replace damaged-C3 dependency with ESP32-WROOM-32D vehicle plan.
-- [x] Select phone/computer wireless-control direction; protocol remains pending.
-- [x] Document drive motor plus steering motor arrangement.
-- [x] Document L293D, GPS, ultrasonic, buzzer, and white headlights.
-- [x] Draft signal and power block diagrams.
-- [x] Record battery/converter/capacitor inventory.
-- [x] Run initial hypothetical movement script in Octave (user screenshot).
-- [x] Add simulation assumptions, electrical estimates, and corrected speed-axis label.
-- [x] Draft separate power pinout with TP4056, two SPST switches, and OUT- system ground.
-- [ ] Confirm two boost modules for independent 5 V electronics and candidate 6 V motor rails.
-- [ ] Verify TP4056 protection topology and charge-current setting for selected cell.
-- [ ] Complete fit inspection and weigh the complete vehicle.
-- [ ] Measure wheel diameter/RPM and identify motor gearing.
-- [ ] Inspect steering centering and feedback.
-- [ ] Verify motor starting/running current against driver and converter limits.
-- [ ] Verify battery chemistry, capacity, discharge rating, and loaded voltage.
-- [ ] Test candidate 6 V boost rail and driver heat.
-- [ ] Finalize rechargeable electronics supply, charging/protection, and switches.
-- [ ] Confirm sensor/buzzer models and capacitor values.
-- [ ] Assign ESP32 pins and draw a verified wiring schematic.
-- [ ] Run the updated saved Octave script.
-- [ ] Build a movement model that responds to voltage, torque, and mass.
-- [ ] Implement ESP32 vehicle firmware and manual-control app/protocol.
-- [ ] Test stop behavior, obstacle sensing, and automatic mode.
+## Documented / user-reported work
 
-## Historical controller progress
+- [x] Select ESP32-WROOM-32D with phone/computer control.
+- [x] Document one drive motor and one steering motor with L293D.
+- [x] Plan front ultrasonic, GPS, buzzer, and two white headlights.
+- [x] Document two-boost architecture: 6 V motors and 5 V electronics.
+- [x] Include TP4056-style protected charging and separate on/off branches.
+- [x] Correct switch description: reported three-terminal device, likely SPDT used for on/off.
+- [x] Document shared OUT- load ground and separate raw battery B-.
+- [x] Record reported 4.68 V motor pack and 3.65 V electronics cell.
+- [x] Record direct boosted drive-motor test.
+- [x] Record drive-motor test through L293D and visual speed comparison.
+- [x] Record switch-off motor operation, charger heating, and meter trouble as unresolved.
+- [x] Record user execution/screenshots of both Octave examples.
+- [x] Save latest power/control Octave script and explicit assumptions.
+- [x] Distinguish final plan from temporary USB/manual-jumper bench wiring.
 
-The following checklist records the earlier C3/S3 design. It is retained as history; its pending tasks are outside the active vehicle plan.
+Checked items record documentation and user reports, not independent hardware verification.
 
-# Progress
+## Next hardware checks
 
-## Phase 1 — Controller
+- [ ] Identify actual meter, correct its measurement setup, and establish reliable readings.
+- [ ] Trace motor power path while motor switch is off.
+- [ ] Verify switch common/outer contacts and DC current ratings.
+- [ ] Verify charger topology, polarity, charge-current setting, and heating behavior.
+- [ ] Confirm converter identities/count and sustained/startup load capability.
+- [ ] Measure battery, boost, and motor voltages under matching loads.
+- [ ] Measure motor running/starting current and driver temperature.
+- [ ] Verify complete rechargeable/5 V electronics branch with safe USB power isolation.
+- [ ] Confirm capacitor selection and local supply bypassing.
+- [ ] Inspect fit, weigh complete car, and measure wheel size/RPM/gearing.
+- [ ] Inspect steering centering, feedback, and limits.
+- [ ] Identify sensor/buzzer supply requirements and accessory drivers.
 
-- [x] Project created
-- [x] Controller-first scope
-- [x] C3 pin reference
-- [x] S3 specifications
-- [x] Landscape orientation
-- [x] Cyberpunk UI direction
-- [x] Navigation joystick role
-- [x] Driving joystick role
-- [x] Switch functions
-- [x] C3/S3 UART pins identified as legacy wiring
-- [x] Display bring-up
-- [x] Adafruit_GFX + Adafruit_ILI9341 display firmware
-- [x] Landscape orientation corrected
-- [x] Full-screen redraw flicker removed
-- [x] Live joystick display path (30 ms display refresh)
-- [x] 20 ms joystick telemetry
-- [x] Non-blocking TCP receive parser
-- [x] TCP no-delay mode and Wi-Fi auto-reconnect
-- [x] Navigation/action feedback added
-- [x] Wi-Fi AP on S3
-- [x] Wi-Fi station on C3
-- [x] TCP controller protocol
-- [x] Automatic Wi-Fi/TCP reconnect logic
-- [ ] Physical Wi-Fi link test
-- [ ] Verify long-duration Wi-Fi stability after V2.2.0
-- [ ] Navigation joystick physical calibration
-- [ ] Driving joystick physical calibration
-- [ ] Full controller integration test
-- [ ] Wi-Fi range/reliability test
+## Next control and software work
 
-## Phase 2 — Vehicle
+- [ ] Remove fixed 5 V control jumpers before attaching ESP32 GPIOs.
+- [ ] Assign GPIOs for both enable and four direction signals; specify default-disabled pull-downs.
+- [ ] Implement ESP32 vehicle firmware.
+- [ ] Verify enable LOW, startup, stop, disconnect, and power-switch behavior.
+- [ ] Select phone/computer wireless app and protocol.
+- [ ] Integrate ultrasonic, GPS, headlights, and buzzer.
+- [ ] Develop GPS/map/API interface if pursued, with actual data rather than simulated telemetry.
+- [ ] Test automatic obstacle behavior and stopping distance.
+- [ ] Replace simulation assumptions with measurements and a torque/mass model.
 
-Deferred.
-
+[Earlier C3/S3 progress](../documentation/history/CONTROLLER_PROGRESS.md) is retained only as history.

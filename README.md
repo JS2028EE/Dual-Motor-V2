@@ -2,7 +2,7 @@
 
 An ESP32 robotic car with one motor for forward/reverse and one motor for steering.
 
-**Current revision: V2.3.0 planning update — October 16, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical.
+**Current revision: V2.4.0 documentation and bench-test update — October 17, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical. **No C3 or S3 controller is used or required in the active build.** The block diagrams and current decision record define the plan.
 
 ## Current plan
 
@@ -12,30 +12,41 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 - Front ultrasonic sensor, GPS, buzzer, and two white headlights.
 - Three 1.5 V cells in series for a nominal 4.5 V motor pack.
 - Separate rechargeable electronics battery; 1,000 mAh and 500 mAh batteries are available.
-- Evaluate an adjustable boost converter for a 6 V motor supply.
-- Use a TP4056-style charger for the electronics cell and two SPST switches, one per supply branch; charge with both load switches off.
+- Use two independent boost converters: 6 V motor rail and 5 V electronics rail; complete integration and load capability remain unverified.
+- Use a TP4056-style charger for the electronics cell and two on/off switches, one per supply branch (reported three-terminal switch: likely SPDT used for an SPST function); charge with both load switches off.
 - Use GNU Octave for initial movement and electrical estimates, then replace assumptions with measurements.
 
-**Status:** architecture and initial simulation only. Final wiring, pin assignments, firmware, charging circuit, motor-current limits, and actual driving performance are not validated.
+**Status:** planning, reported drive-motor bench tests, and two hypothetical Octave examples. The final battery-powered electronics branch, GPIO mapping, vehicle firmware, GPS/map/API integration, steering, charging thermal behavior, and load capability are not validated. The motor unexpectedly ran with its motor-power switch off during a USB-powered test; that path remains unresolved.
 
 ## Documentation
 
 | Topic | File |
 |---|---|
+| Active design decisions | [Decisions](documentation/DECISIONS.md) |
+| Tests, notes, and observations | [Test log](documentation/testing/TEST_LOG.md) |
 | Power terminals, rails, charger, and switches | [Power pinout plan](documentation/pin-configuration/POWER_PINOUT.md) |
 | Signal and power block diagrams | [Block diagrams](diagrams/README.md) |
 | Parts, power, control, and measurement plan | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
 | Octave script and assumptions | [Simulation notes](simulations/README.md) |
 | Current checklist and earlier progress | [Progress](progress/PROGRESS.md) |
 | Electrical and mechanical limits | [Limitations](limitations/LIMITATIONS.md) |
-| Revision record | [V2.3.0](versions/V2.3.0.md) |
+| Revision record | [V2.4.0](versions/V2.4.0.md) |
 | Earlier controller overview | [Historical README](documentation/history/CONTROLLER_README.md) |
 
 ## First Octave result
 
 With an assumed 65 mm wheel, 120 wheel RPM, and a 1.5 s response time, the example approaches **0.41 m/s** and covers **3.47 m in 10 s**. The user ran the initial script and shared the movement plots.
 
-These are hypothetical results. The movement model does not yet couple battery voltage, current, driver loss, mass, or motor torque to speed. The boost comparison in the script changes electrical estimates only.
+These are hypothetical results. The movement model does not yet couple battery voltage, current, driver loss, mass, or motor torque to speed. The boost comparison in the baseline script changes electrical estimates only. The latest power/control model adds a simplified voltage-to-RPM assumption; it still does not model torque or mass.
+
+## Latest reported tests and model
+
+- Direct boosted drive motor: visibly faster than the earlier 3.7 V battery test; no RPM/current measurement.
+- Through L293D: visually estimated roughly 50% slower; driver loss versus supply sag not measured.
+- Motor switch off: motor still ran when USB powered the ESP32 board/driver logic; switching motor power on increased speed. The source path is not diagnosed.
+- Second Octave example: forward/disable/reverse sequence, two supply current estimates, and shutdown at 18 s. User-shared plots match the script assumptions.
+
+See the test log for charging heat and multimeter troubleshooting. Model outputs are not hardware measurements.
 
 ## Historical controller work
 

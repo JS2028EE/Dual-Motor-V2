@@ -1,36 +1,52 @@
-# Current vehicle limitations
+# Current limitations
 
-- The damaged C3 is excluded; the S3 handheld controller is outside the active scope.
-- There is no implemented ESP32 vehicle firmware yet.
-- Wireless transport/app, pin mapping, final wiring, and automatic behavior are pending.
-- Motor RPM, torque, gearing, starting/stall current, and complete mass are unmeasured.
-- Steering angle cannot be known from a two-wire motor alone; feedback/centering needs inspection.
-- A direct 4.5 V motor supply with 5 V L293D logic is outside TI recommended supply conditions.
-- L293D voltage drop and heating can substantially reduce motor performance.
-- Candidate boost-module identity and motor-start capability are unconfirmed.
-- Neither a boost converter nor a capacitor removes the L293D current/thermal limits.
-- Capacitors reduce brief disturbances; they do not supply sustained extra voltage/current.
-- The reported 22 pF and 104 pF ceramics are not selected as motor-noise suppression capacitors.
-- Electronics battery voltage/chemistry, regulation, charge protection, and power switching need verification.
-- Ultrasonic level protection and exact GPS/buzzer supply requirements need confirmation.
-- GPS is not precise obstacle sensing.
-- Simulation output uses assumed inputs; movement is independent of electrical estimates.
-- The example battery runtimes exclude motors and do not guarantee supply peak-current capability.
-- No real driving, obstacle-avoidance, stopping-distance, or fail-safe performance is validated.
+Updated October 17, 2026. This file covers the ESP32-only car in the [block diagrams](../diagrams/README.md). Earlier C3/S3 limitations are retained separately as [historical notes](../documentation/history/CONTROLLER_LIMITATIONS.md).
 
-See [vehicle plan](../documentation/architecture/VEHICLE_V2.md) and [simulation notes](../simulations/README.md).
+## Observed and unresolved
 
-## Historical controller limitations
+| Issue | Evidence | Status |
+|---|---|---|
+| Motor runs with motor switch off | User's USB-powered bench sequence; speed increases when motor switch turns on | Alternate power path unidentified; switch alone is not verified isolation |
+| Motor slower through L293D | Visual estimate of roughly 50% less speed than direct 6 V | No RPM, motor voltage, or current measurement; cause unconfirmed |
+| Charger very hot | User report; B+/OUT+ bridge removed afterward | No verified root cause, charge-current check, or thermal retest |
+| Multimeter unreliable | Reported 0.00 V on known source and fluctuating mV readings | Exact meter/model, sockets, leads, range, and contacts need checking |
+| Driver held enabled | Pin 1 tied to fixed 5 V for manual test | Expected static HIGH; GPIO/default-off behavior not implemented |
 
-# Current Limitations
+A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW should disable the intended output stage, but does not diagnose the switch-off power path or prove hardware shutdown.
 
-- Joystick orientation/calibration still requires physical testing.
-- Final power wiring must be verified on the actual S3 board.
-- Wi-Fi controller communication is implemented and replaces UART in the active firmware.
-- The old UART wires remain physically documented but are not used by the current controller firmware.
-- The controller network uses prototype credentials compiled into both sketches.
-- Vehicle communication is not implemented.
-- Touch is intentionally unused.
-- Real vehicle GPS data is unavailable until vehicle integration.
-- Wi-Fi link behavior still needs physical range, reconnect, and interference testing.
+## Electrical design
 
+- L293D is the selected driver; no L298N substitution is planned.
+- L293D rated continuous current is up to 600 mA per channel, subject to thermal limits. Actual motor starting/stall current remains unknown.
+- Driver voltage loss varies with load; the assumed 2 V loss is not a measured value or guarantee. Neither extra boost voltage nor a capacitor removes driver limits.
+- Motor rail stays at the selected 6 V target. An 8 V increase was discussed but not adopted.
+- Motor-pack 4.68 V and electronics-cell 3.65 V are user reports; reliable loaded readings are still needed.
+- Two independent boost stages are selected. Actual devices, capacity, regulation, and full electronics battery operation are unverified.
+- USB powered the ESP32 in the reported bench tests. Do not assume USB and external 5 V may be connected together without checking the exact development board's isolation.
+- The three-terminal switch is likely SPDT used as an SPST function. Its common/outer terminals and current rating need verification.
+- Power-off does not disconnect ESP32 GND. Common load returns use charger OUT-, not an external B-/OUT- bridge.
+- Charger protection, charge current, battery chemistry/rating, and wiring require verification. Charging occurs with both load switches off; no load-sharing design exists.
+- A 3.7 V cell can reach 4.2 V; do not feed it directly into ESP32 3V3. A resistor divider is not an ESP32 power regulator.
+- Capacitor transient filtering is not validated. Reported 22 pF and 104 pF parts are not selected for motor/supply suppression.
+- Adequate local bypass capacitors, accessory drivers, rail current budgets, and wiring/switch ratings remain to be checked.
+
+## Firmware and sensing
+
+- No C3 or S3 controller is used; their retained files are historical only.
+- No ESP32 vehicle sketch, final GPIO mapping, wireless protocol, or app is implemented in the repository.
+- Fixed 5 V control jumpers must be removed before GPIO connection. GPIOs must not receive 5 V.
+- Enable pull-downs, startup state, command timeout, disconnect behavior, stop command, and mixed-power states are not validated.
+- Steering feedback, centering, limits, and safe actuation duration remain unknown. Do not hold a steering motor against an end stop.
+- Exact ultrasonic/GPS/buzzer models, module supply voltages, and ultrasonic Echo level protection need confirmation.
+- GPS provides location; it does not replace front obstacle sensing. GPS/map/API work is a future integration, not a verified feature here.
+
+## Simulation and mechanics
+
+- Both Octave examples use assumed wheel size/RPM, motor current, driver drop, and efficiency.
+- The baseline movement graph is independent of voltage/current. The latest model adds only an assumed voltage-to-RPM relation; it has no mass, torque, gearing, friction, or validated braking model.
+- Constant enabled motor current in the latest model is a simplification, not a PWM/current prediction.
+- Backfeed, charger operation, battery sag, converter idle current, capacitor transients, and startup/stall surges are omitted.
+- Runtime estimates are for the electronics cell only, with assumed efficiency/usable capacity. Motor-pack runtime is unknown.
+- Wheel dimensions/RPM, complete mass, driving force, steering angle, stopping distance, range, obstacle avoidance, and floor-driving performance remain unmeasured/unvalidated.
+
+See [test log](../documentation/testing/TEST_LOG.md), [power plan](../documentation/pin-configuration/POWER_PINOUT.md), and [simulation notes](../simulations/README.md).

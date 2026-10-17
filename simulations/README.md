@@ -1,6 +1,13 @@
 # GNU Octave estimates
 
-Run `movement_power_v2.m` in GNU Octave. No packages are required.
+No packages are required. Both scripts are hypothetical estimates, not vehicle firmware.
+
+| Script | Purpose |
+|---|---|
+| [movement_power_v2.m](movement_power_v2.m) | Earlier 10 s baseline with nominal 4.5 V pack and 3.7 V electronics cell |
+| [power_control_v2.m](power_control_v2.m) | Latest 20 s power/control example using reported 4.68 V pack and 3.65 V cell |
+
+The following baseline sections describe the first file; the latest model is documented below.
 
 ## What is modeled
 
@@ -37,3 +44,26 @@ The numerical estimates were independently checked using arithmetic. This update
 ## Next measurements
 
 Replace wheel diameter, driven-wheel RPM, motor current, driver loss, battery voltage, and electronics currents with measured values. Then add motor torque/gearing, mass, resistance, and braking data for a coupled movement model.
+
+## Latest model: power_control_v2.m
+
+Run `power_control_v2.m` to reproduce the second example shared in conversation. The user supplied the three-panel Octave result on October 17; it matches the intended command timeline. No Octave runtime is available in the assistant environment, so the saved script has not been independently executed there.
+
+| Time | Intended action |
+|---|---|
+| 0–2 s | Electronics on; drive disabled |
+| 2–8 s | Forward at 60% PWM; assumed steering current during 4–5 s |
+| 8–10 s | Drive disabled; buzzer during 8–9 s |
+| 10–16 s | Reverse at 50% PWM |
+| 16–18 s | Drive disabled; electronics remain on |
+| 18–20 s | Both supplies switched off; prescribed speed decays |
+
+Estimated electronics battery current is about 427 mA normally and 435 mA with the buzzer. Motor-pack current is about 377 mA during drive and 528 mA with the assumed steering load. Target speed is +0.245 m/s forward and -0.204 m/s reverse; these are model targets, not measured top speeds. Estimated steady electronics runtime is about 1.87 h for 1,000 mAh with 80% usable capacity and the stated assumptions.
+
+The latest model approximates average motor voltage as signed PWM duty times (6 V - assumed 2 V driver drop), then assumes wheel RPM scales linearly with that voltage. This is an illustrative electrical-to-speed relationship, not a validated motor model. It has no torque, mass, friction, motor inductance, or braking model. Speed decays even after enable drops; this approximates coasting rather than an immediate physical stop.
+
+The drive-current assumption is fixed whenever enabled, so its current plot is the same for 60% forward and 50% reverse. Driver heat excludes logic losses. Current estimates exclude converter idle draw, protection losses, startup/stall surges, and radio peaks. Steering is only a current interval, not a steering-angle model.
+
+Charge/current integration and the separate 5 V/6 V rails represent intended correct wiring. Charging, protection cutoff, capacitors, unintended USB power paths, and mixed-switch operation are not modeled. This script cannot diagnose the observed motor-running-with-switch-off condition.
+
+The figures are evidence of example script behavior. See [bench test log](../documentation/testing/TEST_LOG.md) for actual reported observations.

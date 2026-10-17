@@ -1,6 +1,6 @@
 # V2 block diagrams
 
-Current planning revision: October 16, 2026. These are architecture diagrams, not a pin-level wiring schematic.
+Current planning revision: October 17, 2026. This is the agreed active architecture: no C3 or S3 handheld controller. These are architecture diagrams, not a pin-level wiring schematic.
 
 ## Signals and control
 
@@ -29,31 +29,39 @@ Detailed terminal assignments: [power pinout plan](../documentation/pin-configur
 flowchart TD
     USB["External USB 5 V"] --> Charger["TP4056-style protected charging module"]
     Cell["One Li-ion cell: battery leads to B+ and B-"] --- Charger
-    Charger -->|"OUT+"| SWE["SW-E: SPST electronics switch"]
+    Charger -->|"OUT+"| SWE["SW-E: electronics on/off"]
     SWE --> BoostE["Separate electronics boost: 5.0 V"]
     BoostE --> Rail5["5 V rail"]
     Rail5 --> ESP["ESP32 board verified 5 V input"]
     ESP --> Rail3["3.3 V rail: compatible low-current loads"]
-    Rail5 --> Logic["L293D pin 16: logic supply"]
+    Rail5 -->|"5 V to pin 16"| DriverPower
     Rail5 --> Loads["Compatible 5 V loads"]
 
-    AA["Three 1.5 V cells in series: 4.5 V nominal"] --> SWM["SW-M: SPST motor switch"]
+    AA["Three 1.5 V cells in series: 4.5 V nominal"] --> SWM["SW-M: motor on/off"]
     SWM --> BoostM["Motor boost: candidate 6.0 V"]
-    BoostM --> VM["L293D pin 8: motor supply"]
+    BoostM -->|"6 V to pin 8"| DriverPower["L293D"]
     BoostM --> Cap["100 uF across motor rail and ground"]
-    VM --> Motors["Two motor bridges: drive and steering"]
+    DriverPower --> Motors["Outputs 3/6 drive; 11/14 steering"]
 
     GND["SYSTEM_GND: charger OUT-, not B-"] --- AA
     GND --- ESP
-    GND --- VM
+    GND ---|"Pins 4, 5, 12, 13"| DriverPower
     GND --- BoostE
     GND --- BoostM
 ```
 
 Ground lines indicate shared load returns: AA negative, both converter returns, ESP32 GND, L293D ground pins, and accessory grounds join SYSTEM_GND. Motor return wiring goes directly to the motor battery negative rather than through the ESP32 board. Raw rechargeable-cell B- stays only on the battery side of the protection circuit.
 
-Two boost stages are required; only one module has been shown. A buck-only converter cannot supply either voltage increase. Positive rails remain separate. GPS rail and exact ESP32 development-board input must be confirmed.
+Two boost stages are selected; physical identities and complete battery-powered integration remain unverified. A buck-only converter cannot supply either voltage increase. Positive rails remain separate. GPS rail and exact ESP32 development-board input must be confirmed.
 
-Both SPST switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The ordinary three-cell motor pack is not connected to the charger.
+Both on/off switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The ordinary three-cell motor pack is not connected to the charger.
 
 GPIOs and analog/digital signal wiring will be assigned separately. This power architecture is a draft, pending actual module, current, charge-rate, and mixed-power-state checks.
+
+## How to read this plan
+
+The switches perform an SPST on/off function. The user reported a three-terminal switch, likely SPDT: verify its common and one connected outer terminal, leaving the other outer terminal unused. This is the same two-branch architecture.
+
+This diagram shows intended final wiring. USB-fed ESP32 5 V and fixed HIGH driver-input jumpers were temporary bench-test arrangements. They are not an extra power route in the final plan. Remove fixed 5 V control jumpers before GPIO wiring; the final L293D logic supply stays at pin 16.
+
+The motor ran with its supply switch off during the reported bench test. That is an unresolved observation, not intended behavior depicted by this diagram. See [test log](../documentation/testing/TEST_LOG.md) and [limitations](../limitations/LIMITATIONS.md). The proposed GPIO/default-off behavior has not been implemented.

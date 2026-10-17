@@ -1,10 +1,12 @@
 # ESP32 vehicle plan
 
-Updated October 16, 2026. This plan supersedes the handheld-controller-first scope.
+Updated October 17, 2026. This plan supersedes the handheld-controller-first scope.
 
 ## Power terminal plan
 
-See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two SPST switches, separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. GPIO/signal assignments are deferred. Two boost stages are required by the proposed rails; the second module is not confirmed.
+See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two switched positive branches (likely SPDT switches used for SPST on/off), separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. GPIO/signal assignments are deferred. Two boost stages are required by the proposed rails; module identities and complete integration remain unverified.
+
+See [current decisions](../DECISIONS.md) and [bench test log](../testing/TEST_LOG.md). No C3 or S3 controller is part of the active build. Bench USB power is temporary; it does not change the battery/charger/two-boost architecture.
 
 ## Goal and control
 
@@ -23,8 +25,8 @@ Planned stop behavior: disable drive on startup, manual stop, stale manual-contr
 | Drive | Existing 3–6 V brushed DC motor | RPM, gearing, torque, and current unknown |
 | Steering | Existing steering motor/mechanism | Centering and feedback unknown |
 | Motor pack | Three 1.5 V cells in series, 4.5 V nominal | Cell type, capacity, and load sag pending |
-| Electronics battery | Separate rechargeable battery; 1,000 mAh and 500 mAh available | Select one; confirm voltage/chemistry/discharge rating |
-| Step-up | Pictured adjustable module resembles MT3608 | Chip identity and load capability unconfirmed |
+| Electronics battery | Separate 1,000 mAh cell selected for modeling; 500 mAh alternative | 3.65 V user report; confirm chemistry, charge/discharge ratings |
+| Step-up | Two independent boosts: motor 6 V and electronics 5 V; pictured type resembles MT3608 | Motor direct test reported; identities and full load capability unconfirmed |
 | Step-down | Available converter | Exact model and need pending |
 | Ultrasonic | Working front sensor; HC-SR04 candidate | Confirm model; protect 5 V Echo if applicable |
 | GPS | Existing GPS breakout | Exact model, rail voltage, and current pending |
@@ -33,7 +35,7 @@ Planned stop behavior: disable drive on startup, manual stop, stale manual-contr
 | Bulk capacitor | 100 uF, 50 V electrolytic | Candidate near driver motor supply |
 | Extra capacitor | 10 uF, 50 V electrolytic | Available; placement to be decided |
 | Ceramics | User reports 22 pF and 104 pF | Record as reported; not selected for motor suppression |
-| Charging and switches | TP4056-style protected charger and two SPST load switches | Terminal plan documented; charge current/protection and ratings pending |
+| Charging and switches | TP4056-style protected charger and two on/off functions; three-terminal switch likely SPDT | Verify common/outer contacts, charge current, protection, heating, and ratings |
 | Magnetic sensor | Available | Deferred until a purpose is chosen |
 
 Battery capacities are mAh, not current ratings. Do not combine the 500 mAh and 1,000 mAh cells in this plan; they are alternative electronics-battery candidates.
@@ -109,7 +111,7 @@ A two-wire DC steering motor cannot command an absolute angle without a reliable
 - Required driven-wheel torque: torque = F * D/2.
 - Stopping distance: d approximately v*response_delay + v^2/(2*braking_deceleration).
 
-Motor torque/gearing, friction, and measured acceleration are needed to connect weight and voltage to movement. The first Octave script is a hypothetical speed curve, not that full model.
+Motor torque/gearing, friction, and measured acceleration are needed to connect weight and voltage to movement. The first Octave script is a hypothetical speed curve, not that full model. The newer power/control example adds an assumed linear voltage-to-RPM relation, but still has no torque/mass model. See [both scripts](../../simulations/README.md).
 
 ## Sources
 

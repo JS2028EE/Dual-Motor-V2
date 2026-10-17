@@ -1,6 +1,6 @@
 # V2 power pinout plan
 
-Date: October 16, 2026. Status: planning draft; verify actual boards before wiring.
+Updated: October 17, 2026. Status: planning draft; verify actual boards before wiring.
 
 This document assigns power terminals and supply rails only. GPIO, analog inputs, UART, PWM, and sensor signals will be planned separately. The motor driver here is the **L293D** from the current parts list. If the actual part is L298N, its power pinout must be redone.
 
@@ -11,7 +11,7 @@ This document assigns power terminals and supply rails only. GPIO, analog inputs
 | MOTOR_RAW | 4.5 V nominal | Three 1.5 V cells in series | SW-M input |
 | MOTOR_SW | Variable around pack voltage | SW-M output | Motor boost IN+ |
 | MOTOR_6V | Candidate regulated 6.0 V | Motor boost OUT+ | L293D VCC2, pin 8 |
-| CELL+ / CELL- | One compatible Li-ion/LiPo cell, 3.7 V nominal, 4.2 V full | Selected 1,000 mAh OR 500 mAh battery | Charger B+ / B- |
+| CELL+ / CELL- | One compatible Li-ion/LiPo cell, 3.7 V nominal, 4.2 V full | 1,000 mAh selected for modeling; 500 mAh alternative | Charger B+ / B- |
 | BAT_PROTECTED+ | Battery-following voltage, not regulated 5 V | Charger OUT+ | SW-E input |
 | ELEC_SW | Battery-following voltage | SW-E output | Electronics boost IN+ |
 | ELEC_5V | Regulated 5.0 V | Electronics boost OUT+ | Verified ESP32 board 5 V input, L293D logic, compatible 5 V loads |
@@ -35,8 +35,8 @@ Connect cell 1 positive to cell 2 negative, and cell 2 positive to cell 3 negati
 
 | From | To | Purpose |
 |---|---|---|
-| Motor pack positive | SW-M terminal 1 | Raw motor power |
-| SW-M terminal 2 | Motor boost IN+ | Disconnect converter input when off |
+| Motor pack positive | SW-M verified connected outer terminal | Raw motor power |
+| SW-M verified common terminal | Motor boost IN+ | Disconnect converter input when off |
 | Motor pack negative / SYSTEM_GND | Motor boost IN- | Battery return |
 | Motor boost OUT+ | MOTOR_6V -> L293D pin 8, VCC2 | Candidate 6 V motor rail |
 | Motor boost OUT- | SYSTEM_GND | Motor supply return |
@@ -48,7 +48,7 @@ Connect cell 1 positive to cell 2 negative, and cell 2 positive to cell 3 negati
 
 The two motors are powered through separate H-bridges, not connected in series with each other. The capacitor is across the rail in parallel, not in series with the motor.
 
-6 V is a proposed test setting. Set it with a multimeter before attaching the driver. Confirm the motors remain within their 3–6 V terminal rating at light and heavy load; do not treat a fixed driver-drop estimate as guaranteed.
+6 V is the selected motor boost target and was user-reported adjusted during the direct motor test. Loaded output remains unmeasured. Set it with a multimeter before attaching the driver. Confirm the motors remain within their 3–6 V terminal rating at light and heavy load; do not treat a fixed driver-drop estimate as guaranteed.
 
 ## 4. Charger terminal map
 
@@ -58,7 +58,7 @@ The pictured six-pad TP4056-style board has battery and load terminals. Confirm 
 |---|---|---|
 | B+ | Rechargeable cell positive only | Battery connection |
 | B- | Rechargeable cell negative only | Battery-side return |
-| OUT+ | SW-E terminal 1 | Protected load positive |
+| OUT+ | SW-E verified connected outer terminal | Protected load positive |
 | OUT- | SYSTEM_GND | Protected load return |
 | IN+ | External regulated 5 V, if using wired input | Alternative to USB charging input |
 | IN- | External charging-source return, if using wired input | Alternative to USB charging input |
@@ -77,7 +77,7 @@ For this version, turn both load switches OFF while charging. No simultaneous ch
 | From | To | Purpose |
 |---|---|---|
 | Charger OUT+ | SW-E terminal 1 | Protected battery power |
-| SW-E terminal 2 | Electronics boost IN+ | Load switch before converter |
+| SW-E verified common terminal | Electronics boost IN+ | Load switch before converter |
 | Charger OUT- / SYSTEM_GND | Electronics boost IN- | Protected battery return |
 | Electronics boost OUT+ | ELEC_5V distribution | Regulated 5.0 V |
 | Electronics boost OUT- | SYSTEM_GND | Electronics return |
@@ -113,13 +113,13 @@ This architecture requires **two independent boost stages**:
 1. Protected rechargeable cell -> 5 V electronics.
 2. Three-cell motor pack -> candidate 6 V motor rail.
 
-Only one boost module has been shown; quantity is unconfirmed. A step-down-only converter cannot raise a 3.7 V cell to 5 V or a 4.5 V pack to 6 V. Do not connect the two batteries to a single converter input. Confirm two suitable boost modules or revise the supply design before assembly.
+Two independent boost converters are the accepted design. Actual quantity, identities, and complete electronics-branch assembly have not been verified. A step-down-only converter cannot raise a 3.7 V cell to 5 V or a 4.5 V pack to 6 V. Do not connect the two batteries to a single converter input. Confirm two suitable boost modules or revise the supply design before assembly.
 
 The pictured module resembles an MT3608 board; confirm the chip marking and actual output-current/thermal capability. Datasheet switch-current limits are not guaranteed module output-current ratings.
 
 ## 8. Switches and off state
 
-SW-M and SW-E are independent **SPST switches in the positive supply paths**. Size each switch for its branch's DC current, including startup/inrush.
+SW-M and SW-E provide independent **SPST on/off functions in the positive supply paths**. A physical switch was reported to have three terminals, so it is likely SPDT: use its verified common and one outer terminal, with the other outer terminal disconnected and insulated. The center is often common but must be checked with power disconnected. This changes the hardware description, not the two-branch power architecture. Size each switch for its branch's DC current, including startup/inrush.
 
 | Operating state | SW-M | SW-E | Notes |
 |---|---|---|---|
@@ -131,6 +131,14 @@ SW-M and SW-E are independent **SPST switches in the positive supply paths**. Si
 Turning the ESP32 off does not open its GND connection. Motor-driver logic inputs and enables need defined inactive states; enable pull-downs and unpowered-interface behavior will be specified in the later signal plan. Do not rely solely on absence of software commands for shutdown.
 
 TI specifies L293D VCC1 >= 4.5 V and VCC2 >= VCC1. A direct nominal 4.5 V motor rail with 5 V logic is outside these conditions. The candidate 6 V motor rail addresses this while both supplies are on; independent switching still needs validation.
+
+## Bench-test deviation and unresolved power behavior
+
+During the reported test, USB powered the ESP32 board rather than the final electronics battery/boost branch. Its 5 V rail fed L293D pin 16 plus fixed HIGH control jumpers at pins 1 and 2. The motor ran with its motor switch off and sped up when it was turned on. This is an observed limitation, not intended power switching.
+
+The source path remains unconfirmed. Remove fixed 5 V control jumpers before any ESP32 GPIO connection. Pin 16 remains a 5 V logic supply; pin 1 will become software-controlled enable, with a defined default-disabled state. GPIO control does not prove physical motor-power isolation. See [test log](../testing/TEST_LOG.md).
+
+The charger was also reported very hot; the proposed B+/OUT+ bridge explanation is not a confirmed diagnosis. Charging current, polarity, protection topology, and thermal behavior need verification.
 
 ## 9. Capacitors and remaining checks
 
@@ -144,6 +152,6 @@ TI specifies L293D VCC1 >= 4.5 V and VCC2 >= VCC1. A direct nominal 4.5 V motor 
 ## References
 
 - [TI L293x datasheet](https://www.ti.com/lit/ds/symlink/l293.pdf): power pin numbers, supply ordering, current/thermal limits, and decoupling.
-- [TP4056 manufacturer datasheet, distributor-hosted](https://www.digikey.com/htmldatasheets/production/2049110/0/0/1/tp4056.pdf): one-cell charging and charge-current programming.
+- [TP4056 manufacturer datasheet, distributor-hosted](https://www.sunrom.com/download/TP4056.pdf): one-cell charging and charge-current programming.
 - [Protected TP4056 module vendor manual](https://shillehtek.com/blogs/shillehtek-product-manuals/tp4056-1a-lipo-battery-charging-board-type-c-with-current-protection-manual): B/OUT terminal roles and load-sharing limitations; verify actual module.
 - [Espressif module datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf): 3.3 V module requirements; development-board power input remains board-specific.
