@@ -212,3 +212,47 @@ Partial success: continuous steering noise resolved in the reported trial; drivi
 ## Test 10 — Three-test steering plan and 200 ms candidate
 
 October 17, 2026. User requested a duration trial, a bench-source trial, and a combined trial, all with the electrolytic capacitor installed. See [full matrix](STEERING_TEST_MATRIX.md). Baseline with the same capacitor is added to distinguish capacitor effects. Current firmware now uses 200 ms; use 150 ms for baseline and source-only comparison. 230 ms is a later candidate, not implemented. Source remains 6 V, not an overvoltage trial. Host logic tests passed; hardware results pending. Prior across-terminal current readings are invalid and are not used to size the supply.
+
+
+## Test 11 — Test 1 duration trial: unloaded steering improves, loaded steering remains weak
+
+October 17, 2026. User identifies this as Test 1 of the planned matrix, following the 200 ms candidate update. Exact flashed pulse value and capacitor installation/value were not independently confirmed in this report. No voltage/current traces, CV/CC readings, or measured steering angles were supplied.
+
+### Observed conditions
+
+| Condition | User-reported result |
+|---|---|
+| Car held with wheels clear of ground; driving motor OFF | Steering works well and responds in time. |
+| Wheels lifted; driving motor ON | Steering barely moves compared with drive-off operation. |
+| Car on ground, stationary; driving motor OFF | Steering attempts to move but barely turns. |
+| Car on ground and moving | Steering is reported even worse. |
+| Driving while issuing a steering command | A noticeable brief driving slowdown, described as under a second. |
+
+These conditions must remain separate: "works in the air" applies specifically to drive-OFF operation, not all lifted-wheel tests. Increased pulse time has not solved steering under actual vehicle load. Earlier continuous-noise improvement is retained as a separate successful change.
+
+### User explanation and proposed fixes
+
+Jay attributes the drive-on weakness to inadequate shared power and the ground-only weakness to tire friction/load. He proposes inspecting the steering mechanism, correcting binding or gearing, suitable lubrication, weight distribution, a different battery, separate motor supplies, or a later software mode that reduces driving to about 50% duty during a stronger steering command. Reducing total weight is constrained by the existing components and planned buzzer/sensor.
+
+These are hypotheses and proposed changes, not confirmed causes or implemented fixes. Tire scrub and front-wheel load can increase steering torque demand, while changes with driving energized suggest electrical interaction; driving vibration or linkage effects could also contribute. A moving car is not universally harder to steer than a stationary car: this is the user's observation on this mechanism and surface, not a general friction rule.
+
+### Interpretation and useful next steps
+
+- Timing alone is insufficient in this trial. More time can increase travel only while the mechanism can move.
+- The firmware still uses approximately 50% steering PWM (128/255). Pulse duration and PWM duty are separate variables. Increased steering duty is a possible later test, not implemented or established safe for this motor/load/driver.
+- Reducing drive duty during a steering pulse may reduce competing supply demand. It does not allocate a fixed percentage of total power or guarantee increased steering torque. Actual current and rail behavior depend on the loads/source.
+- Inspect linkage, removed gear pieces, leverage and mechanical alignment with power disconnected. Restoring gear reduction may increase steering torque at lower speed; removing gears to gain speed can reduce torque. Use only a small amount of plastic-compatible lubricant on appropriate pivots/gears, not tires, motor brushes or electronics.
+- Compare the same steering action with the front wheels lifted versus on the ground, keeping initial angle and source settings consistent. Front axle load, tire contact/surface, and any interference deserve attention.
+- A different battery could help only if its current capability and the boost/driver path meet the load. Lithium chemistry or mAh capacity alone does not prove this.
+- A single L293D has one motor-supply pin (8) shared by both bridges. Separate motor power supplies would require separate suitable drivers or a redesigned driver arrangement; do not connect two supplies to pin 8 or put a motor across an external source while still connected to driver outputs.
+- Driver voltage drop and thermal/current limits remain possible constraints even with an adequate source. Source: https://www.ti.com/lit/ds/symlink/l293.pdf .
+
+### Next test and comparison controls
+
+Continue the planned source-only Test 2 at 6 V bench supply and 150 ms, then the combined Test 3 at 6 V and 200 ms. Keep capacitor, steering duty/frequency, starting angle, surface/load, and drive command the same. The current download defaults to 200 ms, so explicitly edit STEER_PULSE_MS to 150 and upload for Test 2. If the user instead retains 200 ms on the bench, record it as Test 3, not a source-only comparison.
+
+Use the previously documented source-disconnection wiring and current-limit procedure. Record CV/CC and actual displayed voltage before deciding the supply solved the problem. If steering remains weak on the ground while the bench holds 6 V in CV, investigate mechanics, available motor/driver torque and steering duty rather than assuming higher voltage is needed.
+
+### Status
+
+Test 1: partial improvement when unloaded; fails the practical requirement to steer under ground load/while driving. Test 2 and Test 3 results pending. No firmware, PWM duty, voltage, capacitor wiring, separate supply, battery chemistry, or mechanical change was implemented by this documentation update.

@@ -52,3 +52,8 @@ Stop rather than holding at an end stop. No multimeter current measurement is re
 ## Status
 
 Only firmware timing and documentation have changed. No capacitor, supply setting, mechanics, or actual vehicle behavior was changed remotely. Host tests passed for 200 ms cutoff and preserved drive/stop behavior; Arduino-core compilation and 200 ms hardware results remain pending.
+
+
+## Test 1 result update
+
+The user reports steering works with wheels lifted and driving off, but barely moves with driving on even while lifted. Ground contact further limits steering, and driving briefly slows during commands. Timing alone has not met the loaded-steering requirement. See [Test 11](TEST_LOG.md#test-11--test-1-duration-trial-unloaded-steering-improves-loaded-steering-remains-weak) for the separated conditions, hypotheses and proposed fixes. Capacitor installation and exact flashed duration were not reconfirmed. Source-only Test 2 must use 150 ms; the current default is 200 ms and corresponds to Test 3 when used with the bench source.
