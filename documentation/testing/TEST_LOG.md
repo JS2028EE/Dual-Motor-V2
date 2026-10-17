@@ -116,6 +116,28 @@ Recorded October 16–17, 2026, America/New_York. These records distinguish user
 
 **Status:** Inspection, lubrication, repair, and the proposed duty comparison are pending. No motor/driver replacement, voltage increase, or confirmed fix is recorded.
 
+## Test 8 / design revision — Steering stall hypothesis and pulse control, October 17
+
+**Additional bench context:** The user received a bench supply and reported the noise/drive slowdown still occurred during combined drive and steering tests. Actual loaded voltage, current, and CV/CC readings were not supplied, so a supply limit versus driver/mechanical cause remains undetermined.
+
+**User's observation and reasoning:** The existing steering command stayed active after pressing left/right. Once the mechanism could not turn further, the motor could continue pushing against the linkage/end stop. The user identified this as a likely source of noise and extra power demand.
+
+**Firmware inspection:** The previous latched sketch confirms steering enable remained active until stop, a direction change, disconnect, or another stop condition. That supports the stall hypothesis but does not prove that the motor was physically stalled or quantify its current.
+
+**Requested and implemented revision:**
+- Drive forward/back remain latched.
+- Reverse only drive electrical polarity to compensate for reported swapped motor wires.
+- Left/right become a single brief steering movement followed by steering output disable.
+- Preserve integer speed_N messages, startup setting100, BLE identity, GPIO wiring, 1 kHz PWM, and approximately 50% steering duty.
+- Initial pulse is150 ms of actual energization, not a calibrated steering angle. Same-side repeat packets do not extend/retrigger it; opposite direction or stop re-arms steering.
+- Stop/disconnect still clears both drive and steering. Stop cancels a pending pulse.
+
+**Energy interpretation:** Removing continuous steering power should reduce steering energized time compared with holding it on, especially if it was stalled. Actual energy savings, current reduction, and noise/speed improvement have not been measured.50% PWM is not necessarily50% total supply power.
+
+**Mechanical limitation:** Once steering power is removed, this driver does not lock wheel position. Position retention depends on gears, friction, centering springs, and external load; the wheels may move or return. No feedback/limit sensing exists. A timed pulse can still stall briefly if an end stop is reached before it ends.
+
+**Artifacts and status:** [Current pulse-steering test code](../../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) added; prior code preserved. Host parser/control tests passed. Actual board compilation and hardware retest remain pending. Keep6 V motor rail and compare steering movement, noise, drive speed, supply voltage/current, and CV/CC behavior.
+
 ## Simulation observations
 
 ### Initial movement example — October 16

@@ -38,6 +38,10 @@ A future GPS/map/API web interface may provide telemetry and control presentatio
 
 V2.0.0–V2.2.0 and controller-c3/controller-s3 directories describe an abandoned handheld-controller approach. Their presence is not a dependency or instruction to build that design.
 
-## Motor-only BLE testing update
+## Earlier latched-steering test
 
 The user requested integer speed_N values, initial 100 drive duty, independently latched driving and steering, and lowercase stop for both motors. These behaviors are recorded as [testing code](../firmware/testing/README.md), not validated production control. No steering limit cutoff or command timeout is present in the latest latched version. Drive buzzing near30, steering noise, and drive slowdown during steering remain unresolved. The latest reported supply-capacitor experiment names 1,000 uF/50 V; location/polarity are unverified.
+
+## Current pulse-steering revision — October 17
+
+Use the [pulse-steering sketch](../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). Drive remains latched, with its electrical forward/back mapping reversed for the user's motor wiring. Left/right trigger one150 ms pulse at unchanged steering duty/frequency, then disable steering. Repeats in the same direction are ignored until opposite or stop. The timing is uncalibrated; no active position hold or limit feedback exists. No voltage increase, power-architecture change, or verified noise/energy improvement is recorded.

@@ -75,3 +75,9 @@ A correctly connected 1,000 uF capacitor supplying an extra 0.3 A with an allowe
 - [Recorded BLE test source](../../firmware/testing/DualMotorV2_BLE_Latched/DualMotorV2_BLE_Latched.ino): actual selected frequency and duty behavior.
 
 These sources support the circuit principles; actual causes remain unmeasured.
+
+## Software revision now implemented — October 17
+
+The user identified continuous steering power against a movement limit as the likely problem. Inspection confirms the old sketch latched steering enable. The [new test sketch](../../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) changes steering to a150 ms pulse followed by output disable; drive remains latched and its electrical forward/back polarity is reversed.
+
+Repeated same-side commands do not extend or retrigger the pulse; opposite direction or stop re-arms it. Steering duty/frequency remain unchanged. This is a mitigation for continuous energization, not proof of the diagnosis or a tested noise fix. It cannot hold a wheel angle after power removal and does not know when the mechanism reaches an end stop. Actual current, sound, and drive-speed comparison is pending. No motor-voltage increase was adopted.

@@ -1,67 +1,65 @@
-# BLE motor-control TEST code
+# BLE motor-control TEST firmware
 
-Recorded October 17, 2026. These sketches are testing artifacts, not a production controller or an autonomous car implementation. Current hardware remains the original ESP32-WROOM-32D plus L293D; no C3 or S3 controller.
+## Current: pulse steering, latched drive — October 17, 2026
 
-## Active recorded test
+Use [DualMotorV2_BLE_Pulse.ino](DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). This revision implements bounded steering pulses and reverses drive polarity to match the user's reported swapped motor wires. It is test firmware, not a validated complete vehicle controller.
 
-[DualMotorV2_BLE_Latched.ino](DualMotorV2_BLE_Latched/DualMotorV2_BLE_Latched.ino) is a behavior-preserving copy of the revised latched-control code shared in chat, with documentation/comments consolidated. It records the tested design; no noise fix or supply upgrade is silently included.
+Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No C3/S3 controller and no extra Arduino libraries. BLE name remains `DualMotorV2`; Serial Monitor 115200.
 
-- Arduino-ESP32 core 3.x; built-in BLE/FreeRTOS.
-- BLE name: `DualMotorV2`.
-- Nordic UART service: `6e400001-b5a3-f393-e0a9-e50e24dcca9e`.
-- App writes UTF-8 commands to RX: `6e400002-b5a3-f393-e0a9-e50e24dcca9e`.
-- Status READ/NOTIFY: `6e400003-b5a3-f393-e0a9-e50e24dcca9e`.
-- One command per write or newline-separated complete commands. Actual app must use this format; compatibility has not been independently verified.
-- Serial Monitor: 115200 baud.
-
-## Commands and why they exist
-
-| Command | Behavior |
+| Command | Current behavior |
 |---|---|
-| `forward` | Latches drive forward at selected PWM duty |
-| `back` | Latches drive reverse at selected PWM duty |
-| `left` | Latches steering left at fixed 128/255 duty |
-| `right` | Latches steering right at fixed 128/255 duty |
-| `speed_0` through `speed_100` | Integer drive-duty setting; 0 disables both bridges |
-| `stop` | Disables both drive and steering bridges |
+| `forward` | Drive remains forward until changed/stopped; electrical polarity reversed from prior sketch |
+| `back` | Drive remains backward until changed/stopped; electrical polarity reversed from prior sketch |
+| `left` | One 150 ms left steering pulse, then steering bridge disabled |
+| `right` | One 150 ms right steering pulse, then steering bridge disabled |
+| `speed_0`–`speed_100` | Integer drive-duty setting; 0 stops both |
+| `stop` | Disables both bridges, clears pending steering and drive, re-arms steering |
 
-Initial speed setting is 100%, but both motors start disabled until a direction command. Speed is duty cycle, not measured wheel speed. At `speed_30`, the drive bridge uses approximately 30% duty (about 77/255), not a guaranteed 30% RPM or constant 1.8 V motor supply.
+Initial drive setting remains100%, with both motors stopped at startup. Drive stays latched with no command timeout. Steering PWM remains128/255 (about50%), and both channels remain1 kHz: no voltage, steering-duty, or frequency increase is included.
 
-The speed control permits adjustable drive power and comparisons across duty settings. The user specifically highlighted noise around a setting of 30, while settings above that appeared smoother/quieter. The slider changes drive duty only; it does not change fixed steering duty.
+The 150 ms limit starts when steering is actually energized, after the short command-transition delay. It is an initial uncalibrated bench value, not proof of full wheel travel. Same-side repeat messages are ignored during and after the pulse, so a held/repeated button cannot continuously extend steering. Send the opposite direction or `stop` before requesting a new same-side pulse. Forward/back and speed changes do not re-arm completed steering. Stop/disconnect clears all motion.
 
-Forward/back and steering states are independent. Releasing a button leaves the state unchanged unless the app sends a release packet such as `stop` or a supported false value. Configure release messages accordingly. Commands remain latched with no movement timeout; steering has no duration limit in this version.
+## Position is not held electrically
 
-Changing between directions disables the affected bridge for a short 50 ms command transition. This is not a measured mechanical stopping interval or validation of reversal current.
+At pulse completion, steering enable becomes zero and both direction outputs become LOW. The bridge is disabled (coast), not actively holding an angle or applying a position lock. The wheels may remain turned, spring back, or move under external load depending on the mechanism. No steering sensor or end-stop detection exists. A timed pulse can still reach an end stop before its timer expires.
 
-## Stop and emergency use
-
-The user selected lowercase `stop` as the button for stopping the entire car during testing. Code sets both enable PWM duties to zero and clears both direction pairs. That disables drive; it does not guarantee an instant mechanical halt, active braking, power isolation, or response if the BLE link/software fails.
-
-BLE disconnection, unknown input, and input overflow also request a software stop. Disconnection clears old motion; reconnecting does not resume it. This is not an independently validated hardware emergency stop. Physical supply switches remain available, and the earlier unintended motor-power path remains unresolved.
-
-Continuous steering against an end stop can stall/heat the motor and consume substantial current. Do not leave it latched against a stop. Pulse/limit/feedback-based steering is a proposed next change, not present in the archived test behavior.
-
-## GPIO wiring
+## Wiring and BLE
 
 | ESP32 GPIO | L293D physical pin | Function |
 |---|---|---|
 | 25 | 1 | Drive enable/PWM |
-| 26 | 2 | Drive input 1 |
-| 27 | 7 | Drive input 2 |
+| 26 | 2 | Drive input1 |
+| 27 | 7 | Drive input2 |
 | 14 | 9 | Steering enable/PWM |
-| 32 | 10 | Steering input 1 |
-| 33 | 15 | Steering input 2 |
+| 32 | 10 | Steering input1 |
+| 33 | 15 | Steering input2 |
 
-L293D pin 8 is the 6 V motor rail; pin 16 is the 5 V logic rail. All four driver ground pins 4/5/12/13 connect to shared load ground. Drive motor is between 3/6; steering is between 11/14. Remove fixed 5 V control jumpers before GPIO wiring. Use two separate 10k pull-downs: pin 1 to GND and pin 9 to GND, not a resistor between pins 1 and 9.
+L293D pin8 ->6 V motor rail; pin16 ->5 V logic rail. Pins4/5/12/13 share load ground. Drive motor3/6; steering11/14. Use two separate10k pull-downs, pin1->GND and pin9->GND. Remove fixed5 V control jumpers before GPIO connection. Refer to the [power plan](../../documentation/pin-configuration/POWER_PINOUT.md).
 
-Both PWM channels are configured at 1,000 Hz, 8-bit resolution. Fixed 50% steering therefore remains PWM-driven even when drive speed is 100%.
+- Service: `6e400001-b5a3-f393-e0a9-e50e24dcca9e`.
+- RX write: `6e400002-b5a3-f393-e0a9-e50e24dcca9e`.
+- TX status READ/NOTIFY: `6e400003-b5a3-f393-e0a9-e50e24dcca9e`.
+- UTF-8 complete commands per write, or newline-separated complete commands.
+- Configure button release to send nothing if motion should remain latched. A received `stop` or supported false packet still stops both.
 
-## Earlier test code
+## Emergency software stop and limits
 
-[Timed version](history/DualMotorV2_BLE_Timed/DualMotorV2_BLE_Timed.ino) preserves the earlier speed-0/decimal-speed sketch with 700 ms drive timeout and steering pulses. It is historical and does not describe the user's latest requested behavior.
+Lowercase `stop` is the user's emergency software command, not a hardware emergency-stop circuit. BLE disconnect, unknown command, and input overflow also stop motor requests. Coast stopping is not instantaneous mechanical braking or physical power isolation. The earlier unexpected motor-power path is not diagnosed by this code.
+
+Steering stall is the user's plausible explanation for noise/shared-load slowdown; improvement from this change has not been measured. Supply limit behavior, driver heating, low-duty buzzing, and actual steering travel remain to be checked. Keep motor rail at6 V; do not interpret 50% PWM as exactly half the supply power.
+
+## Test history
+
+- [Previous latched-steering sketch](DualMotorV2_BLE_Latched/DualMotorV2_BLE_Latched.ino): continuous steering until stop/opposite command. Historical comparison only.
+- [Original timed test](history/DualMotorV2_BLE_Timed/DualMotorV2_BLE_Timed.ino): speed0 startup, decimal-speed messages and drive timeout. Historical only.
 
 ## Verification
 
-The command parser and motor-request state transitions of the saved latched version were host-tested with g++: integer speed boundaries, decimal/invalid rejection, forward/back/left/right latching, stop-all, and speed-zero behavior. This does not exercise real BLE/PWM, compile against the actual ESP32 core, or verify hardware.
+Host tests extract the actual parser/control functions and mock GPIO/PWM. They check reversed drive polarity, latched drive during steering, pulse duration, same-side-repeat suppression, opposite re-arm, stop cancellation, speed0, and unsigned timer rollover.
 
-The user reported motor behavior/noise during BLE testing. Exact uploaded binary, full source identity, electrical readings, and disconnect/stop test performance have not been independently verified. See [test log](../../documentation/testing/TEST_LOG.md) and [motor-noise investigation](../../documentation/testing/MOTOR_NOISE_AND_LOAD.md).
+Run from repository root:
+```bash
+python3 tests/test_ble_pulse.py firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino
+```
+
+Requires Python3 and g++. Tests passed in the assistant environment. No actual ESP32-core compilation, BLE radio test, motor-power measurement, steering-angle validation, or confirmation of noise reduction was performed.

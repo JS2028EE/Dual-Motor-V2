@@ -38,7 +38,7 @@ A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW shoul
 - No C3 or S3 controller is used; their retained files are historical only.
 - BLE motor-control TEST sketches and selected six-GPIO test mapping are now recorded; no complete validated vehicle firmware, autonomous sensing, or production app integration exists.
 - Fixed 5 V control jumpers must be removed before GPIO connection. GPIOs must not receive 5 V.
-- Enable pull-downs, startup/disconnect/stop behavior and mixed-power states are not electrically validated. Latest test code latches motion with NO command timeout; steering has no time/end-limit cutoff. BLE stop is software, not hardware isolation.
+- Enable pull-downs, startup/disconnect/stop behavior and mixed-power states are not electrically validated. Current test code latches DRIVE with NO command timeout; steering now has a 150 ms pulse limit and same-side-repeat guard, but no physical end-limit feedback. BLE stop is software, not hardware isolation.
 - Steering feedback, centering, limits, and safe actuation duration remain unknown. Do not hold a steering motor against an end stop.
 - Exact ultrasonic/GPS/buzzer models, module supply voltages, and ultrasonic Echo level protection need confirmation.
 - GPS provides location; it does not replace front obstacle sensing. GPS/map/API work is a future integration, not a verified feature here.
@@ -60,4 +60,8 @@ The third script models assumed steady-state resistive drops and boost power bal
 
 ## Recorded motor test firmware
 
-See [BLE test code](../firmware/testing/README.md). Both channels use 1 kHz PWM; steering remains near 50% duty regardless of drive slider. A 1,000 uF/50 V electrolytic was reported in the latest unsuccessful noise experiment; placement was not verified. Continuous steering may stall against a stop and increase shared supply load. See [motor-noise investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md).
+See [BLE test code](../firmware/testing/README.md). Both channels use 1 kHz PWM; steering remains near 50% duty regardless of drive slider. A 1,000 uF/50 V electrolytic was reported in the latest unsuccessful noise experiment; placement was not verified. Previous continuous steering may have stalled against a stop. The new timed pulse limits energized duration but can still reach a stop early; position retention after disable is unverified. See [motor-noise investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md).
+
+## Pulse-steering revision limits
+
+The user's stall explanation is plausible, not a confirmed physical diagnosis. Current [pulse test code](../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) reverses drive polarity and keeps forward/back latched. Steering runs for150 ms at unchanged approximately 50% duty then disables; repeated same-side messages cannot extend it. That is open-loop timing, not position control. Wheels may spring back or move after disable. Same-side re-trigger requires opposite command or stop. Hardware validation, actual travel time, current savings, noise reduction, and shared-load performance remain pending. Host control tests passed; actual ESP32 build/radio tests were not performed.

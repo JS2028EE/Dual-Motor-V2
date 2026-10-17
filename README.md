@@ -2,7 +2,7 @@
 
 An ESP32 robotic car with one motor for forward/reverse and one motor for steering.
 
-**Current revision: V2.6.0 BLE motor-test and noise investigation update — October 17, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical. **No C3 or S3 controller is used or required in the active build.** The block diagrams and current decision record define the plan.
+**Current revision: V2.7.0 pulse-steering test revision — October 17, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical. **No C3 or S3 controller is used or required in the active build.** The block diagrams and current decision record define the plan.
 
 ## Current plan
 
@@ -33,7 +33,7 @@ An ESP32 robotic car with one motor for forward/reverse and one motor for steeri
 | Electronics power-chain model | [MATLAB / Octave script](simulations/electronics_power_chain.m) |
 | BLE motor test code / commands | [Testing guide](firmware/testing/README.md) |
 | Motor noise and steering-load slowdown | [Investigation](documentation/testing/MOTOR_NOISE_AND_LOAD.md) |
-| Revision record | [V2.6.0](versions/V2.6.0.md) |
+| Revision record | [V2.7.0](versions/V2.7.0.md) |
 | Earlier controller overview | [Historical README](documentation/history/CONTROLLER_README.md) |
 
 ## First Octave result
@@ -44,7 +44,9 @@ These are hypothetical results. The movement model does not yet couple battery v
 
 ## Latest reported tests and model
 
-- BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched directions, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
+- Current [pulse-steering test sketch](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) implements the user's requested steering-power cutoff while preserving latched drive. Stall/noise diagnosis and improvement remain unverified; unpowered steering position is not guaranteed.
+
+- BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched drive, bounded150 ms steering pulses, reversed drive polarity, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
 - Steering noise and drive noise around speed 30 persist; latest 1,000 uF/50 V capacitor experiment did not eliminate sound. Drive slows when steering activates. Causes remain unmeasured.
 
 - Electronics supply: user reports correcting an overlapping battery/wire connection, working switch, and ESP32 power LED. Accurate output voltage, load capability, and heating remain unverified.

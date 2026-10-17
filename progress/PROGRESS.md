@@ -27,6 +27,11 @@ Checked items record documentation and user reports, not independent hardware ve
 - [x] Document drive noise near speed 30, steering noise, shared-load slowdown, and latest 1,000 uF/50 V capacitor experiment.
 - [ ] Diagnose noise and shared-load voltage/current behavior; characterize steering limits.
 
+- [x] Record user's steering-stall hypothesis; inspect prior continuous steering code.
+- [x] Implement 150 ms steering pulses, same-side-repeat guard, and reversed drive electrical polarity; preserve latched drive.
+- [x] Pass host control tests for pulse cutoff, repeats, direction polarity, stop, and timer rollover.
+- [ ] Compile/upload new pulse sketch and validate steering travel, angle retention, current/noise, CV/CC, and drive slowdown under load.
+
 ## Next hardware checks
 
 - [ ] Identify actual meter, correct its measurement setup, and establish reliable readings.
