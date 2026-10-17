@@ -113,7 +113,7 @@ This architecture requires **two independent boost stages**:
 1. Protected rechargeable cell -> 5 V electronics.
 2. Three-cell motor pack -> candidate 6 V motor rail.
 
-Two independent boost converters are the accepted design. Actual quantity, identities, and complete electronics-branch assembly have not been verified. A step-down-only converter cannot raise a 3.7 V cell to 5 V or a 4.5 V pack to 6 V. Do not connect the two batteries to a single converter input. Confirm two suitable boost modules or revise the supply design before assembly.
+Two independent boost converters are the accepted design. The user now reports electronics-branch assembly, working switch, and ESP32 LED power-up. Actual converter identities, connection inspection, loaded voltage/current, and thermal behavior remain unverified. A step-down-only converter cannot raise a 3.7 V cell to 5 V or a 4.5 V pack to 6 V. Do not connect the two batteries to a single converter input. Confirm two suitable boost modules or revise the supply design before assembly.
 
 The pictured module resembles an MT3608 board; confirm the chip marking and actual output-current/thermal capability. Datasheet switch-current limits are not guaranteed module output-current ratings.
 
@@ -155,3 +155,7 @@ The charger was also reported very hot; the proposed B+/OUT+ bridge explanation 
 - [TP4056 manufacturer datasheet, distributor-hosted](https://www.sunrom.com/download/TP4056.pdf): one-cell charging and charge-current programming.
 - [Protected TP4056 module vendor manual](https://shillehtek.com/blogs/shillehtek-product-manuals/tp4056-1a-lipo-battery-charging-board-type-c-with-current-protection-manual): B/OUT terminal roles and load-sharing limitations; verify actual module.
 - [Espressif module datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf): 3.3 V module requirements; development-board power input remains board-specific.
+
+## Electronics power-up update — October 17
+
+The user reported correcting an overlapping battery/wire connection, particularly underneath, and then reported a working switch and ESP32 power LED. The precise fault was not identified. This does not change the agreed wiring or establish numerical rail/current values. See [test 6](../testing/TEST_LOG.md#test-6--electronics-power-branch-assembled-october-17) and [MATLAB/Octave model](../../simulations/electronics_power_chain.m).

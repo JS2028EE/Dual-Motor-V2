@@ -63,6 +63,20 @@ Recorded October 16–17, 2026, America/New_York. These records distinguish user
 
 **Plan:** One compatible rechargeable cell on B+/B-, protected load through OUT+/OUT-, correct charge-current setting for the selected cell, and both load switches off while charging. The three ordinary 1.5 V cells are separate from the charger.
 
+## Test 6 — Electronics power branch assembled, October 17
+
+**User-reported setup:** Rechargeable electronics battery -> TP4056-style protected OUT terminals -> electronics on/off switch -> boost converter -> ESP32 development board. This follows the planned electronics branch; it does not change the separate motor supply.
+
+**Reported issue and correction:** While connecting the battery/wires, the user found an overlapping connection, especially on the underside, and inspected the connections to ensure they were separated. The exact pads, type of overlap, and electrical fault were not identified clearly enough to establish a root cause. The user reported correcting it.
+
+**Observation after correction:** The switch reportedly works. The ESP32 board's power LED illuminated and looked similar to its appearance under USB power. The exact LED was not independently identified.
+
+**Conclusion:** User-reported power-up and switch operation are positive functional observations. An illuminated LED does not establish an accurate 5.0 V rail, correct 3.3 V regulation, adequate current capacity, correct charging, or safe thermal behavior.
+
+**Still to verify:** Actual loaded boost output, board 3.3 V rail, battery/current measurements, switch isolation with USB absent, connection inspection, and heating. This report does not independently resolve the earlier very-hot charger or the motor-running-with-motor-switch-off behavior.
+
+**Simulation added:** [Electronics power-chain model](../../simulations/electronics_power_chain.m), with assumed source/path resistance, 5 V conversion efficiency, switch timing, and changing load. Its separate charging figure is an illustrative constant-current loss estimate, not a charge-cycle or thermal-safety validation.
+
 ## Simulation observations
 
 ### Initial movement example — October 16
@@ -84,7 +98,7 @@ These demonstrate script execution and its assumptions, not measured vehicle per
 | Motor pack voltage | 4.68 V user-reported; loaded measurement pending |
 | Rechargeable cell voltage | 3.65 V user-reported; reliable recheck pending |
 | Motor boost output | Adjusted to 6 V per user report; loaded measurement pending |
-| Electronics boost output | 5 V design target; complete battery operation unvalidated |
+| Electronics boost output | 5 V target; switch and LED power-up user-reported Oct 17; loaded voltage/current unverified |
 | Driver/motor current, wheel RPM | Unmeasured |
 | Final mass, wheel size, steering feedback | Unmeasured/unconfirmed |
 | Shutdown, disconnect and automatic-mode behavior | Unvalidated |

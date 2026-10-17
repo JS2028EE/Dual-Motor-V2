@@ -17,6 +17,8 @@ Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and
 - [x] Record switch-off motor operation, charger heating, and meter trouble as unresolved.
 - [x] Record user execution/screenshots of both Octave examples.
 - [x] Save latest power/control Octave script and explicit assumptions.
+- [x] Record electronics switch/LED power-up and battery/wire-overlap correction report.
+- [x] Add MATLAB/Octave electronics-chain voltage/current/loss model with separate charging example.
 - [x] Distinguish final plan from temporary USB/manual-jumper bench wiring.
 
 Checked items record documentation and user reports, not independent hardware verification.
@@ -30,7 +32,7 @@ Checked items record documentation and user reports, not independent hardware ve
 - [ ] Confirm converter identities/count and sustained/startup load capability.
 - [ ] Measure battery, boost, and motor voltages under matching loads.
 - [ ] Measure motor running/starting current and driver temperature.
-- [ ] Verify complete rechargeable/5 V electronics branch with safe USB power isolation.
+- [ ] Electrically validate reported rechargeable/5 V branch power-up: loaded voltage/current, switching, heating, and USB power isolation.
 - [ ] Confirm capacitor selection and local supply bypassing.
 - [ ] Inspect fit, weigh complete car, and measure wheel size/RPM/gearing.
 - [ ] Inspect steering centering, feedback, and limits.

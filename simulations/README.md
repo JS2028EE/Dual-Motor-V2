@@ -1,9 +1,10 @@
-# GNU Octave estimates
+# MATLAB / GNU Octave power and movement estimates
 
-No packages are required. Both scripts are hypothetical estimates, not vehicle firmware.
+No packages are required. These scripts are hypothetical estimates, not vehicle firmware.
 
 | Script | Purpose |
 |---|---|
+| [electronics_power_chain.m](electronics_power_chain.m) | New electronics battery, charger-output path, switch, boost, and separate charging-loss example |
 | [movement_power_v2.m](movement_power_v2.m) | Earlier 10 s baseline with nominal 4.5 V pack and 3.7 V electronics cell |
 | [power_control_v2.m](power_control_v2.m) | Latest 20 s power/control example using reported 4.68 V pack and 3.65 V cell |
 
@@ -67,3 +68,39 @@ The drive-current assumption is fixed whenever enabled, so its current plot is t
 Charge/current integration and the separate 5 V/6 V rails represent intended correct wiring. Charging, protection cutoff, capacitors, unintended USB power paths, and mixed-switch operation are not modeled. This script cannot diagnose the observed motor-running-with-switch-off condition.
 
 The figures are evidence of example script behavior. See [bench test log](../documentation/testing/TEST_LOG.md) for actual reported observations.
+
+## Electronics branch: electronics_power_chain.m
+
+Copy the full file into a MATLAB script and Run. It uses standard script syntax, vector arithmetic, loops, and subplot/plot without extra toolboxes; it is also intended for GNU Octave. Neither MATLAB nor Octave execution is available in the assistant environment. Numerical power-balance checks were performed separately; compatibility is not a claim of execution.
+
+### Actual power paths being represented
+
+**Running, USB unplugged:** one rechargeable Li-ion/LiPo cell -> protected charger OUT pair -> positive-side switch -> boost IN pair -> regulated 5 V load.
+
+During battery-powered operation, the TP4056 charging IC is not converting the battery into 5 V. The protection MOSFETs/wiring are represented by a small series resistance. The boost performs the voltage increase. B- remains battery-side; OUT- is system ground.
+
+**Charging, modeled separately:** USB 5 V -> linear charger -> cell, with the load switch OFF. The final figure estimates charger loss as (5 V - cell voltage) times an assumed 250 mA charging current over a constant-current voltage range. It is not a full CC/CV charge model, current-setting recommendation, temperature prediction, or proof that the actual board has the modeled setting.
+
+### Inputs and operation
+
+- 3.65 V is assumed open-circuit cell voltage, held constant over the 20 s example. The earlier user report did not establish it as an open-circuit measurement.
+- Capacity is 1.0 Ah (1,000 mAh); it is used to express charge consumed, not as a current limit.
+- Internal cell resistance 0.12 ohm, protection/wiring resistance 0.10 ohm, and switch resistance 0.05 ohm are unmeasured assumptions.
+- Boost efficiency is assumed 85%, target 5 V; input limit 1 A and minimum input 3.1 V are model guardrails, not actual module specifications.
+- Switch is off at 0–2 s, on at 2–18 s, and off afterward. Output load is 200 mA, increasing to 350 mA at 8–12 s.
+- Solve I*(Vcell-I*Rtotal) = 5*Iout/efficiency to account for upstream voltage sag. The same current passes through battery, protection path, switch, and boost input. Boost output current differs.
+- While off, battery and protected-output voltage remain present, but the load-side switch/boost input and output are modeled at zero. Capacitor discharge and residual converter charge are omitted.
+
+### Interpreting the figures
+
+Figure 1 shows voltages after each stage, battery versus 5 V load current, and losses in battery internal resistance, protection path, switch, and boost. At the higher load, input current rises and voltage drops across resistances increase while output is held at 5 V. The model errors out if its guardrails are exceeded instead of pretending regulation continues.
+
+Figure 2 is the separate charging-loss illustration. The electronics switch is OFF in that scenario; this is not simultaneous charge-and-run.
+
+### Limits and verification
+
+No switching waveform, inductor/capacitor dynamics, control-loop stability, battery state-of-charge/voltage curve, protection cutoff, actual converter current limit, USB backfeed, contact fault, motor, or temperature model is included. Converter idle current and charger standby current are omitted. This is a steady-state estimate at each time sample.
+
+Power dissipated as heat is not temperature. Real temperature needs thermal resistance, environment, and measured behavior. The new power-LED observation and simulated 5 V output do not replace meter verification.
+
+Sources: [TI Working with Boost Converters](https://www.ti.com/lit/an/snva731/snva731.pdf) for power balance, and [TP4056 protected-module vendor documentation](https://shillehtek.com/blogs/shillehtek-product-manuals/tp4056-1a-lipo-battery-charging-board-type-c-with-current-protection-manual) for battery/load terminals and charging separation. Verify actual board and battery ratings.

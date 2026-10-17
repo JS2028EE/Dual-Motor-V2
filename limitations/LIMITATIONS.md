@@ -8,6 +8,7 @@ Updated October 17, 2026. This file covers the ESP32-only car in the [block diag
 |---|---|---|
 | Motor runs with motor switch off | User's USB-powered bench sequence; speed increases when motor switch turns on | Alternate power path unidentified; switch alone is not verified isolation |
 | Motor slower through L293D | Visual estimate of roughly 50% less speed than direct 6 V | No RPM, motor voltage, or current measurement; cause unconfirmed |
+| Electronics power-up | User reports working switch and ESP32 LED after correcting underside battery/wire overlap | Functional report only; precise fault and loaded voltages not verified |
 | Charger very hot | User report; B+/OUT+ bridge removed afterward | No verified root cause, charge-current check, or thermal retest |
 | Multimeter unreliable | Reported 0.00 V on known source and fluctuating mV readings | Exact meter/model, sockets, leads, range, and contacts need checking |
 | Driver held enabled | Pin 1 tied to fixed 5 V for manual test | Expected static HIGH; GPIO/default-off behavior not implemented |
@@ -21,7 +22,7 @@ A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW shoul
 - Driver voltage loss varies with load; the assumed 2 V loss is not a measured value or guarantee. Neither extra boost voltage nor a capacitor removes driver limits.
 - Motor rail stays at the selected 6 V target. An 8 V increase was discussed but not adopted.
 - Motor-pack 4.68 V and electronics-cell 3.65 V are user reports; reliable loaded readings are still needed.
-- Two independent boost stages are selected. Actual devices, capacity, regulation, and full electronics battery operation are unverified.
+- Two independent boost stages are selected. Actual devices, capacity, regulation, and electrical performance of the reported battery-powered electronics branch are unverified.
 - USB powered the ESP32 in the reported bench tests. Do not assume USB and external 5 V may be connected together without checking the exact development board's isolation.
 - The three-terminal switch is likely SPDT used as an SPST function. Its common/outer terminals and current rating need verification.
 - Power-off does not disconnect ESP32 GND. Common load returns use charger OUT-, not an external B-/OUT- bridge.
@@ -50,3 +51,7 @@ A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW shoul
 - Wheel dimensions/RPM, complete mass, driving force, steering angle, stopping distance, range, obstacle avoidance, and floor-driving performance remain unmeasured/unvalidated.
 
 See [test log](../documentation/testing/TEST_LOG.md), [power plan](../documentation/pin-configuration/POWER_PINOUT.md), and [simulation notes](../simulations/README.md).
+
+## New electronics-chain model
+
+The third script models assumed steady-state resistive drops and boost power balance. It omits standby current, battery discharge curve, contact faults, protection cutoff, converter transients, and temperature. Its charger plot is a separate constant-current loss illustration with load off, not a full charging simulation. The 250 mA example is not a verified setting for this battery or board. See [simulation notes](../simulations/README.md).
