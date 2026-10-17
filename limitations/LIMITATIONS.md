@@ -11,7 +11,9 @@ Updated October 17, 2026. This file covers the ESP32-only car in the [block diag
 | Electronics power-up | User reports working switch and ESP32 LED after correcting underside battery/wire overlap | Functional report only; precise fault and loaded voltages not verified |
 | Charger very hot | User report; B+/OUT+ bridge removed afterward | No verified root cause, charge-current check, or thermal retest |
 | Multimeter unreliable | Reported 0.00 V on known source and fluctuating mV readings | Exact meter/model, sockets, leads, range, and contacts need checking |
-| Driver held enabled | Pin 1 tied to fixed 5 V for manual test | Expected static HIGH; GPIO/default-off behavior not implemented |
+| Audible motor noise | Steering noise; drive noise around speed 30; latest 1,000 uF/50 V experiment did not remove it | PWM tone/stall hypotheses; no confirmed fix |
+| Drive slows during steering | User report during left/right commands | Shared supply/driver loading suspected; voltage/current unmeasured |
+| Driver held enabled in earlier test | Pin1 tied to fixed 5 V before GPIO control | Historical condition; GPIO test code now recorded, isolation still unresolved |
 
 A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW should disable the intended output stage, but does not diagnose the switch-off power path or prove hardware shutdown.
 
@@ -34,9 +36,9 @@ A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW shoul
 ## Firmware and sensing
 
 - No C3 or S3 controller is used; their retained files are historical only.
-- No ESP32 vehicle sketch, final GPIO mapping, wireless protocol, or app is implemented in the repository.
+- BLE motor-control TEST sketches and selected six-GPIO test mapping are now recorded; no complete validated vehicle firmware, autonomous sensing, or production app integration exists.
 - Fixed 5 V control jumpers must be removed before GPIO connection. GPIOs must not receive 5 V.
-- Enable pull-downs, startup state, command timeout, disconnect behavior, stop command, and mixed-power states are not validated.
+- Enable pull-downs, startup/disconnect/stop behavior and mixed-power states are not electrically validated. Latest test code latches motion with NO command timeout; steering has no time/end-limit cutoff. BLE stop is software, not hardware isolation.
 - Steering feedback, centering, limits, and safe actuation duration remain unknown. Do not hold a steering motor against an end stop.
 - Exact ultrasonic/GPS/buzzer models, module supply voltages, and ultrasonic Echo level protection need confirmation.
 - GPS provides location; it does not replace front obstacle sensing. GPS/map/API work is a future integration, not a verified feature here.
@@ -55,3 +57,7 @@ See [test log](../documentation/testing/TEST_LOG.md), [power plan](../documentat
 ## New electronics-chain model
 
 The third script models assumed steady-state resistive drops and boost power balance. It omits standby current, battery discharge curve, contact faults, protection cutoff, converter transients, and temperature. Its charger plot is a separate constant-current loss illustration with load off, not a full charging simulation. The 250 mA example is not a verified setting for this battery or board. See [simulation notes](../simulations/README.md).
+
+## Recorded motor test firmware
+
+See [BLE test code](../firmware/testing/README.md). Both channels use 1 kHz PWM; steering remains near 50% duty regardless of drive slider. A 1,000 uF/50 V electrolytic was reported in the latest unsuccessful noise experiment; placement was not verified. Continuous steering may stall against a stop and increase shared supply load. See [motor-noise investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md).

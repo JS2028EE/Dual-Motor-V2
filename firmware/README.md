@@ -1,9 +1,9 @@
 # Firmware status
 
-**Active target: ESP32-WROOM-32D vehicle only.**
+**Active target: ESP32-WROOM-32D vehicle only. No C3/S3 controller.**
 
-Use [vehicle-esp32](vehicle-esp32/README.md) for the current target status and [block diagrams](../diagrams/README.md) for architecture. No current vehicle sketch or final GPIO map has been committed.
+- [BLE testing sketches and command guide](testing/README.md): latest latched-control behavior and earlier timed version.
+- [Vehicle integration status](vehicle-esp32/README.md): GPS, ultrasonic, lights, buzzer, and automatic mode remain pending.
+- [Motor-noise/load investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md): current unresolved bench observations.
 
-The controller-c3 and controller-s3 directories contain historical sketches from the abandoned handheld design. Do not upload or treat them as dependencies for the current car. They are preserved to avoid losing earlier work.
-
-The GPIO/PWM sequence in [the Octave example](../simulations/power_control_v2.m) is a simulation, not uploadable firmware or a tested pin assignment.
+Test firmware exists, but no complete validated vehicle controller is released. BLE software stop is not physical power isolation. Earlier controller-c3/controller-s3 files are historical only.

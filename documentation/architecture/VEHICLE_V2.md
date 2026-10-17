@@ -4,7 +4,7 @@ Updated October 17, 2026. This plan supersedes the handheld-controller-first sco
 
 ## Power terminal plan
 
-See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two switched positive branches (likely SPDT switches used for SPST on/off), separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. GPIO/signal assignments are deferred. Two boost stages are required by the proposed rails; module identities and complete integration remain unverified.
+See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two switched positive branches (likely SPDT switches used for SPST on/off), separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. The six motor-test GPIO assignments and BLE commands are recorded in the [testing guide](../../firmware/testing/README.md); sensor/accessory signal assignments remain deferred. Two boost stages are required by the proposed rails; module identities and complete integration remain unverified.
 
 See [current decisions](../DECISIONS.md) and [bench test log](../testing/TEST_LOG.md). No C3 or S3 controller is part of the active build. Bench USB power is temporary; it does not change the battery/charger/two-boost architecture.
 
@@ -120,3 +120,9 @@ Motor torque/gearing, friction, and measured acceleration are needed to connect 
 - [TI Working with Boost Converters](https://www.ti.com/lit/an/snva731/snva731.pdf): input/output power balance.
 - [Pololu motor noise guidance](https://www.pololu.com/docs/0J15/9): ceramic and supply filtering.
 - [Aerosemi MT3608 datasheet, distributor-hosted](https://www.mouser.com/datasheet/2/306/MT3608-3223743.pdf): candidate converter IC only; does not identify or rate the pictured assembled board.
+
+## Motor-test update — October 17
+
+The active motor-only bench test uses BLE on the original ESP32, the agreed L293D pin map, drive speed_N integer duty0–100 (initial 100), latched forward/back/left/right, and lowercase stop for both motors. Steering remains fixed near 50% PWM; both channels are 1 kHz. This is test code, not a complete/validated car controller.
+
+The latest reported 1,000 uF/50 V capacitor experiment did not remove audible noise. Existing ceramics were reported on both motors. Drive noise around speed 30 and drive slowdown during steering are recorded in the [test log](../testing/TEST_LOG.md). Full current, voltage, torque, temperature, and steering-limit validation remains pending. No driver/rail change has been adopted.

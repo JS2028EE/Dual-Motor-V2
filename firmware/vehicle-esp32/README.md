@@ -1,11 +1,9 @@
-# ESP32 vehicle firmware
+# ESP32 vehicle integration
 
-This is the active target for the redesigned Dual Motor V2.
+Current board: original ESP32-WROOM-32D. Follow [block diagrams](../../diagrams/README.md).
 
-Planned target: ESP32-WROOM-32D development board. Manual commands will arrive from a phone/computer over Wi-Fi or Bluetooth; transport is pending.
+The motor-only BLE [test sketches](../testing/README.md) now record the selected GPIO mapping, commands, drive PWM, steering PWM, and stop behavior. They are testing code, not complete vehicle firmware.
 
-Required features include L293D drive/steering control, ultrasonic obstacle sensing, GPS telemetry, white headlights, buzzer, and defined stop behavior.
+GPS, ultrasonic sensing, white headlights, buzzer, automatic mode, GPS/map/API integration, validated shutdown, and steering limit/position behavior remain pending. No C3/S3 controller is used.
 
-**No vehicle sketch is implemented here yet.** Final GPIO assignments and power design must be verified first. Existing C3/S3 sketches belong to the earlier handheld-controller design.
-
-See [vehicle plan](../../documentation/architecture/VEHICLE_V2.md).
+Before integration, investigate [audible noise and shared-load slowdown](../../documentation/testing/MOTOR_NOISE_AND_LOAD.md), earlier unintended motor power, and power/thermal limits. Do not assume the latched steering test can be held against an end stop.

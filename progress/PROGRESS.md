@@ -23,6 +23,10 @@ Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and
 
 Checked items record documentation and user reports, not independent hardware verification.
 
+- [x] Record revised BLE motor-only test code, GPIO mapping, latched commands, and software stop behavior.
+- [x] Document drive noise near speed 30, steering noise, shared-load slowdown, and latest 1,000 uF/50 V capacitor experiment.
+- [ ] Diagnose noise and shared-load voltage/current behavior; characterize steering limits.
+
 ## Next hardware checks
 
 - [ ] Identify actual meter, correct its measurement setup, and establish reliable readings.
@@ -41,8 +45,10 @@ Checked items record documentation and user reports, not independent hardware ve
 ## Next control and software work
 
 - [ ] Remove fixed 5 V control jumpers before attaching ESP32 GPIOs.
-- [ ] Assign GPIOs for both enable and four direction signals; specify default-disabled pull-downs.
-- [ ] Implement ESP32 vehicle firmware.
+- [x] Select motor-only test GPIOs 25/26/27 and 14/32/33; specify separate 10k enable pull-downs.
+- [ ] Electrically verify GPIO mapping, pull-downs, and power-off behavior.
+- [x] Record BLE motor-control testing sketches.
+- [ ] Integrate and validate complete ESP32 vehicle firmware.
 - [ ] Verify enable LOW, startup, stop, disconnect, and power-switch behavior.
 - [ ] Select phone/computer wireless app and protocol.
 - [ ] Integrate ultrasonic, GPS, headlights, and buzzer.

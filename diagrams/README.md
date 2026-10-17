@@ -6,7 +6,7 @@ Current planning revision: October 17, 2026. This is the agreed active architect
 
 ```mermaid
 flowchart TD
-    Client["Phone or computer"] <-->|Wi-Fi or Bluetooth: selection pending| ESP["ESP32-WROOM-32D"]
+    Client["Phone or computer"] <-->|BLE motor test; full interface pending| ESP["ESP32-WROOM-32D"]
     Ultra["Front ultrasonic sensor"] -->|"Distance; protect Echo input if 5 V"| ESP
     GPS["GPS module"] -->|UART location data| ESP
     Feedback["Steering feedback: to be identified"] -.-> ESP
@@ -40,7 +40,7 @@ flowchart TD
     AA["Three 1.5 V cells in series: 4.5 V nominal"] --> SWM["SW-M: motor on/off"]
     SWM --> BoostM["Motor boost: candidate 6.0 V"]
     BoostM -->|"6 V to pin 8"| DriverPower["L293D"]
-    BoostM --> Cap["100 uF across motor rail and ground"]
+    BoostM --> Cap["Bulk capacitor across motor rail and ground"]
     DriverPower --> Motors["Outputs 3/6 drive; 11/14 steering"]
 
     GND["SYSTEM_GND: charger OUT-, not B-"] --- AA
@@ -56,7 +56,7 @@ Two boost stages are selected; physical identities and complete battery-powered 
 
 Both on/off switches are OFF for storage/load shutdown and charging. The charger stays connected to the cell. No charge-and-run load-sharing circuit is included. The ordinary three-cell motor pack is not connected to the charger.
 
-GPIOs and analog/digital signal wiring will be assigned separately. This power architecture is a draft, pending actual module, current, charge-rate, and mixed-power-state checks.
+The motor-only test GPIOs and commands are recorded in the [BLE testing guide](../firmware/testing/README.md); sensor/accessory signal wiring remains pending. This power architecture is a draft, pending actual module, current, charge-rate, and mixed-power-state checks.
 
 ## How to read this plan
 
@@ -64,4 +64,6 @@ The switches perform an SPST on/off function. The user reported a three-terminal
 
 This diagram shows intended final wiring. USB-fed ESP32 5 V and fixed HIGH driver-input jumpers were temporary bench-test arrangements. They are not an extra power route in the final plan. Remove fixed 5 V control jumpers before GPIO wiring; the final L293D logic supply stays at pin 16.
 
-The motor ran with its supply switch off during the reported bench test. That is an unresolved observation, not intended behavior depicted by this diagram. See [test log](../documentation/testing/TEST_LOG.md) and [limitations](../limitations/LIMITATIONS.md). The proposed GPIO/default-off behavior has not been implemented.
+The motor ran with its supply switch off during the reported bench test. That is an unresolved observation, not intended behavior depicted by this diagram. See [test log](../documentation/testing/TEST_LOG.md) and [limitations](../limitations/LIMITATIONS.md). GPIO test code now exists, but power isolation and startup/disconnect/stop performance are not electrically validated.
+
+Latest capacitor observation: the user reports1,000 uF/50 V and pre-existing motor ceramics; audible noise persisted. Earlier supply planning named 100 uF. The diagram shows recommended bulk-filter placement, not proof of the actual installation. See [noise/load investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md). Architecture remains unchanged.

@@ -77,6 +77,23 @@ Recorded October 16–17, 2026, America/New_York. These records distinguish user
 
 **Simulation added:** [Electronics power-chain model](../../simulations/electronics_power_chain.m), with assumed source/path resistance, 5 V conversion efficiency, switch timing, and changing load. Its separate charging figure is an illustrative constant-current loss estimate, not a charge-cycle or thermal-safety validation.
 
+## Test 7 — BLE control, low-duty noise, and steering load, October 17
+
+**Test code:** [Latched BLE test sketch](../../firmware/testing/DualMotorV2_BLE_Latched/DualMotorV2_BLE_Latched.ino), recorded by behavior from the revised code shared in chat. Startup speed setting100; forward/back/left/right remain active after release; integer `speed_N`; lowercase `stop` disables both bridges. Drive and steering are independently latched.
+
+**User-reported observations:**
+- Steering makes audible noise.
+- Drive motor makes noise around speed setting 30; above that the user reports it runs fine.
+- With drive active, left/right steering commands reduce drive-motor speed.
+- Both motors reportedly already have ceramic capacitors.
+- Latest capacitor experiment: 1,000 uF electrolytic, 50 V rating; noise persisted. Earlier reports named 100 uF. Exact installed value/location/polarity and test conditions have not been independently checked.
+
+**Interpretation:** Code uses 1 kHz PWM on both enable channels; steering is fixed near 50% duty, even at drive speed 100. PWM vibration or steering stall are possibilities. The steering adds current demand to the common motor supply; supply sag/driver loss are possible causes of drive slowdown. Power is not simply divided into equal voltages across the motors.
+
+**Stop command:** `stop` is the intended emergency software command during testing, clearing both motor requests and disabling both bridges. No validated physical emergency-stop or instantaneous mechanical stop is established.
+
+**Status:** Noise remains unresolved. No reliable loaded rail/current/RPM measurements or complete stall/temperature checks were provided. See [investigation and proposed solutions](MOTOR_NOISE_AND_LOAD.md).
+
 ## Simulation observations
 
 ### Initial movement example — October 16
@@ -90,6 +107,10 @@ The user ran the second script and shared three plots:
 - Electronics load current drops to zero at the modeled power-off time of 18 s.
 
 These demonstrate script execution and its assumptions, not measured vehicle performance. There was no backfeed, charger, capacitor-transient, torque/mass, or startup-surge validation. See [simulation notes](../../simulations/README.md).
+
+### Electronics power-chain example — October 17
+
+The user shared both output figures from electronics_power_chain.m: regulated 5 V output during the modeled on interval, battery input current about 330/590 mA versus output 200/350 mA, and a separate charger-loss line from 0.45 W at 3.2 V to 0.225 W at 4.1 V. This confirms example execution, not measured battery/charger/boost performance or safe temperatures.
 
 ## Next records to collect
 
