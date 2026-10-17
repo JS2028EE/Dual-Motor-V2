@@ -10,7 +10,9 @@
  TWO separate 10k pull-downs: pin1->GND and pin9->GND.
  Remove fixed 5 V input jumpers before GPIO connection.
  BLE name DualMotorV2; Nordic UART service/RX/TX as defined below.
- Commands: forward, back, left, right, speed_0 ... speed_100, stop.
+ Commands over BLE or USB Serial: forward, back, left, right, speed_0 ... speed_100, stop.
+ Serial: 115200 baud, Newline; status/help/telemetry_on/telemetry_off.
+ Logs show commanded outputs only, not measured voltage/current/angle.
  Speed is integer; initial setting100. Startup motors remain stopped.
  Drive commands latch. Left/right trigger one bounded pulse; no powered hold.
  Drive PWM 1000Hz, 8bit; speed_30 is about30% DUTY, not measured RPM.
@@ -111,6 +113,8 @@ uint32_t driveReadyAt=0, steerReadyAt=0;
 uint32_t steerStartedAt=0;
 bool steerPulseActive=false;
 int lastSteerCommand=0;
+enum ControlSource { NO_SOURCE, USB_SOURCE, BLE_SOURCE };
+ControlSource activeSource=NO_SOURCE;
 
 void stopSteering() {
   ledcWrite(STEER_EN,0);
@@ -247,32 +251,122 @@ void setup() {
   service->start();
   BLEAdvertising *ad=BLEDevice::getAdvertising();
   ad->addServiceUUID(SERVICE); ad->setScanResponse(true); ad->start();
-  Serial.println("BLE DualMotorV2 ready. Speed100; motors stopped. Core3.x.");
+  Serial.println("BLE + USB Serial ready. 115200 baud, Newline. Type help. Motors stopped.");
+  Serial.println("Logs are commanded GPIO/PWM states; no voltage/current/position sensors.");
 }
+
+
+// BEGIN SERIAL CONTROL
+bool telemetryEnabled=false;
+char serialLine[97]{};
+size_t serialLength=0;
+bool serialDiscard=false;
+
+const char *sourceName() {
+  return activeSource==USB_SOURCE ? "usb" :
+         activeSource==BLE_SOURCE ? "ble" : "none";
+}
+
+void printStatus(uint32_t now) {
+  uint32_t elapsed=steerPulseActive ? uint32_t(now-steerStartedAt) : 0;
+  uint32_t remaining=steerPulseActive && elapsed<STEER_PULSE_MS ?
+                     STEER_PULSE_MS-elapsed : 0;
+  Serial.printf("t=%lu src=%s speed=%d drive=%d pwm=%lu steer=%d pwm=%lu remain=%lu ms\n",
+    (unsigned long)now,sourceName(),speedPercent,driveApplied,
+    (unsigned long)ledcRead(DRIVE_EN),steerApplied,
+    (unsigned long)ledcRead(STEER_EN),(unsigned long)remaining);
+  Serial.printf("pins D[%d,%d] S[%d,%d]; configured pulse=%lu ms; COMMANDS, not sensor readings\n",
+    digitalRead(DRIVE_A),digitalRead(DRIVE_B),
+    digitalRead(STEER_A),digitalRead(STEER_B),(unsigned long)STEER_PULSE_MS);
+}
+
+void dispatchCommand(const std::string &line, ControlSource source) {
+  Command c=parseCommand(line);
+  Serial.printf("t=%lu rx[%s]: %s\n",(unsigned long)millis(),
+                source==USB_SOURCE ? "usb" : "ble",line.c_str());
+  handle(c);
+  activeSource=(c.action==STOP || c.action==INVALID ||
+               (c.action==SPEED && c.speed==0)) ? NO_SOURCE : source;
+}
+
+void processSerialLine(const std::string &line) {
+  if (line=="status") { printStatus(millis()); return; }
+  if (line=="help") {
+    Serial.println("forward back left right speed_0..speed_100 stop status telemetry_on telemetry_off");
+    return;
+  }
+  if (line=="telemetry_on" || line=="telemetry_off") {
+    telemetryEnabled=line=="telemetry_on";
+    Serial.println(telemetryEnabled ? "telemetry on: 250 ms" : "telemetry off");
+    return;
+  }
+  dispatchCommand(line,USB_SOURCE);
+}
+
+void pollSerial() {
+  // Bound work per loop so serial traffic cannot monopolize motor updates.
+  for (unsigned n=0;n<64 && Serial.available()>0;n++) {
+    int byte=Serial.read();
+    if (byte<0) break;
+    char c=char(byte);
+    if (c=='\r' || c=='\n') {
+      if (!serialDiscard && serialLength) {
+        serialLine[serialLength]='\0';
+        std::string line=trimmed(serialLine);
+        if (!line.empty()) processSerialLine(line);
+      }
+      serialLength=0; serialDiscard=false;
+    } else if (!serialDiscard) {
+      if (c=='\0' || serialLength>=sizeof(serialLine)-1) {
+        stopAll(); activeSource=NO_SOURCE;
+        serialLength=0; serialDiscard=true;
+        Serial.println("serial invalid/overflow: stopped; discard until newline");
+      } else serialLine[serialLength++]=c;
+    }
+  }
+}
+
+void logOutputs(uint32_t now) {
+  static int previousDrive=999,previousSteer=999;
+  static uint32_t previousDrivePWM=999,previousSteerPWM=999,lastPrint=0;
+  uint32_t dp=ledcRead(DRIVE_EN),sp=ledcRead(STEER_EN);
+  bool changed=previousDrive!=driveApplied || previousSteer!=steerApplied ||
+               previousDrivePWM!=dp || previousSteerPWM!=sp;
+  if (changed || (telemetryEnabled && uint32_t(now-lastPrint)>=250)) {
+    printStatus(now); lastPrint=now;
+    previousDrive=driveApplied; previousSteer=steerApplied;
+    previousDrivePWM=dp; previousSteerPWM=sp;
+  }
+}
+// END SERIAL CONTROL
 
 void loop() {
   uint32_t now=millis();
   static uint32_t seenGeneration=0;
   uint32_t current=generation.load();
-  if (current!=seenGeneration || !connected.load()) {
-    stopAll(); speedPercent=100; seenGeneration=current;
+  if (current!=seenGeneration) {
+    stopAll(); activeSource=NO_SOURCE; speedPercent=100; seenGeneration=current;
+    report(connected.load() ? "BLE connected: stopped" : "BLE disconnected: stopped");
   }
   if (overflowed.exchange(false)) {
-    stopAll(); speedPercent=100; xQueueReset(commands);
+    stopAll(); activeSource=NO_SOURCE; speedPercent=100; xQueueReset(commands);
     report("input overflow: stopped");
   }
   Packet p;
   while (xQueueReceive(commands,&p,0)==pdTRUE) {
     now=millis();
     if (!connected.load() || p.generation!=generation.load()) continue;
-    Serial.print("rx: "); Serial.println(p.text);
-    handle(parseCommand(p.text));
+    dispatchCommand(p.text,BLE_SOURCE);
   }
-  if (!connected.load() || generation.load()!=seenGeneration) {
-    stopAll(); speedPercent=100;
+  pollSerial();
+  now=millis();
+  if (generation.load()!=seenGeneration ||
+      (activeSource==BLE_SOURCE && !connected.load())) {
+    stopAll(); activeSource=NO_SOURCE; speedPercent=100;
   } else {
     updateMotors(now);
   }
+  logOutputs(millis());
   if (restartAd.exchange(false)) BLEDevice::startAdvertising();
   delay(5);
 }

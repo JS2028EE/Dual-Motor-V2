@@ -266,3 +266,10 @@ Record this modification as part of the installation/setup history before interp
 
 Keep this gear setup fixed for the battery baseline and bench-source comparison. If gears changed since the battery trial, repeat the battery baseline with the replacement gears and the same 150 ms pulse/capacitor/load before comparing it with the source-only bench test. Otherwise differences could arise from mechanics as well as source. Test 2 remains pending; no new movement result, firmware change, or supply setting is recorded by this note.
 
+
+
+## Test 12 — Bench-source observation and USB Serial instrumentation
+
+October 17, 2026. User reports CV with wheels lifted, including drive/steer activity. On the ground, driving alone reaches CC and driving plus steering also stays in CC; steering remains weak. Actual set current limit, loaded voltage/current, gear configuration details and exact flashed pulse were not supplied. This identifies source current limiting under the reported ground load; it does not prove the original battery was the sole cause. Increasing the bench limit gradually toward the previously agreed 0.60 A total ceiling was suggested, but no new setting/result is confirmed here.
+
+At user request, current test code adds USB Serial commands and command-state logs. Pulse remains 150 ms. No claimed voltage/current sensing or automatic power allocation was added. See [Serial guide](SERIAL_CONTROL.md). Host tests pass; actual ESP32-core compilation and serial hardware verification remain pending.

@@ -67,3 +67,8 @@ Requires Python3 and g++. Tests passed in the assistant environment. No actual E
 ## Current three-test plan
 
 Default STEER_PULSE_MS is now 150 ms for Test 2. Restore 200 ms for the combined Test 3. See the [test matrix and exact capacitor wiring](../../documentation/testing/STEERING_TEST_MATRIX.md). Test 1 results are recorded; Test 2 and Test 3 results are pending.
+
+
+## USB Serial control added
+
+The current sketch also accepts the same lowercase motor commands from Serial Monitor at 115200 baud with Newline selected. BLE is not required for USB control. Added status, help, telemetry_on and telemetry_off commands; command/output-change logs remain visible. Logs show commanded GPIO/PWM/timing only, not sensed motor voltage/current/speed. BLE connect/disconnect events stop both motors; USB unplug alone is not a detected stop. See [Serial guide](../../documentation/testing/SERIAL_CONTROL.md). Steering remains 150 ms for Test 2.
