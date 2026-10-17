@@ -280,13 +280,13 @@ void printStatus(uint32_t now) {
     digitalRead(STEER_A),digitalRead(STEER_B),(unsigned long)STEER_PULSE_MS);
 }
 
-void dispatchCommand(const std::string &line, ControlSource source) {
+void dispatchCommand(const std::string &line, uint8_t source) {
   Command c=parseCommand(line);
   Serial.printf("t=%lu rx[%s]: %s\n",(unsigned long)millis(),
                 source==USB_SOURCE ? "usb" : "ble",line.c_str());
   handle(c);
   activeSource=(c.action==STOP || c.action==INVALID ||
-               (c.action==SPEED && c.speed==0)) ? NO_SOURCE : source;
+               (c.action==SPEED && c.speed==0)) ? NO_SOURCE : static_cast<ControlSource>(source);
 }
 
 void processSerialLine(const std::string &line) {

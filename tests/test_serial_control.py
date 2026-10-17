@@ -2,6 +2,7 @@
 from pathlib import Path
 import subprocess, tempfile, sys
 s=Path(sys.argv[1]).read_text()
+dispatch_proto=s[s.index('void dispatchCommand('):].split('{',1)[0]+';'
 parser=s.split('// BEGIN COMMAND PARSER (host-tested independently)')[1].split('// END COMMAND PARSER')[0]
 stops=s[s.index('void stopSteering()'):s.index('void report(')]
 logic=s[s.index('void handle(Command c) {'):s.index('void setup()')]
@@ -79,6 +80,6 @@ int main(){
 """
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'serial.cpp';exe=Path(d)/'serial_test'
- p.write_text('#include <cstdint>\n#include <string>\n#include <cstdlib>\n#include <cmath>\n'+parser+stubs+stops+logic+serial+loop+tests)
+ p.write_text('#include <cstdint>\n#include <string>\n#include <cstdlib>\n#include <cmath>\n'+dispatch_proto+parser+stubs+stops+logic+serial+loop+tests)
  subprocess.run(['g++','-std=c++17','-Wall','-Wextra',str(p),'-o',str(exe)],check=True)
  subprocess.run([str(exe)],check=True)
