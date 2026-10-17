@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import sys
+import re
 
 source = Path(sys.argv[1]).read_text()
 parser = source.split('// BEGIN COMMAND PARSER (host-tested independently)')[1].split('// END COMMAND PARSER')[0]
@@ -14,7 +15,7 @@ stubs = r'''
 #include <map>
 constexpr int DRIVE_EN=25,DRIVE_A=26,DRIVE_B=27,STEER_EN=14,STEER_A=32,STEER_B=33;
 constexpr int LOW=0,HIGH=1;
-constexpr uint32_t REVERSE_DELAY_MS=50,STEER_PULSE_MS=150,STEER_DUTY=128;
+constexpr uint32_t REVERSE_DELAY_MS=50,STEER_PULSE_MS=PULSE_VALUE,STEER_DUTY=128;
 int speedPercent=100,driveRequested=0,driveApplied=0,steerRequested=0,steerApplied=0,lastSteerCommand=0;
 uint32_t driveReadyAt=0,steerReadyAt=0,steerStartedAt=0;
 bool steerPulseActive=false;
@@ -24,6 +25,8 @@ void digitalWrite(int p,int v){pins[p]=v;}
 void report(const char*){}
 struct SerialMock {template<class... A>void printf(const char*,A...) {}} Serial;
 '''
+pulse_ms = int(re.search(r'constexpr uint32_t STEER_PULSE_MS=(\d+);', source).group(1))
+stubs = stubs.replace('PULSE_VALUE', str(pulse_ms))
 tests = r'''
 int main(){
  assert(parseCommand("speed_30").speed==30);
@@ -33,8 +36,8 @@ int main(){
  handle(parseCommand("left"));updateMotors(50);assert(pwm[STEER_EN]==0);
  updateMotors(100);assert(steerPulseActive && pwm[STEER_EN]==128);
  handle(parseCommand("left"));updateMotors(200);assert(steerStartedAt==100);
- updateMotors(249);assert(pwm[STEER_EN]==128);
- updateMotors(250);assert(!steerPulseActive && pwm[STEER_EN]==0 && pins[STEER_A]==0 && pins[STEER_B]==0);
+ updateMotors(100+STEER_PULSE_MS-1);assert(pwm[STEER_EN]==128);
+ updateMotors(100+STEER_PULSE_MS);assert(!steerPulseActive && pwm[STEER_EN]==0 && pins[STEER_A]==0 && pins[STEER_B]==0);
  assert(driveRequested==-1 && pwm[DRIVE_EN]==255);
  handle(parseCommand("left"));updateMotors(500);assert(steerRequested==0 && pwm[STEER_EN]==0);
  handle(parseCommand("right"));updateMotors(500);updateMotors(550);assert(steerPulseActive && pins[STEER_B]==HIGH);
@@ -48,7 +51,7 @@ int main(){
  // Check unsigned elapsed time across millis() rollover.
  stopAll();steerRequested=steerApplied=-1;lastSteerCommand=-1;
  steerPulseActive=true;steerStartedAt=UINT32_MAX-50;pwm[STEER_EN]=128;
- updateMotors(120);assert(!steerPulseActive && pwm[STEER_EN]==0);
+ updateMotors(STEER_PULSE_MS-51);assert(!steerPulseActive && pwm[STEER_EN]==0);
  std::cout<<"PASS: reversed drive, latched drive, bounded steering, repeated-command guard, stop, speed zero, timer rollover.\n";
 }
 '''

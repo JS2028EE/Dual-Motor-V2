@@ -45,11 +45,13 @@ These are hypothetical results. The movement model does not yet couple battery v
 
 ## Latest reported tests and model
 
-- **Latest hardware report:** the 150 ms steering cutoff eliminated continuous steering noise and driving improved by observation. Steering remains weak; brief steering noise, low-speed drive noise, and sideways travel remain. Current/voltage and speed are unmeasured. A 200–230 ms pulse is proposed only; firmware remains at 150 ms. See [Test 9](documentation/testing/TEST_LOG.md#test-9--user-reported-hardware-results-after-150-ms-steering-cutoff).
+- New [steering test matrix](documentation/testing/STEERING_TEST_MATRIX.md): capacitor baseline, 200 ms timing trial, 6 V bench-source comparison at 150 ms, then combined 200 ms/bench test. No new hardware result yet.
+
+- **Latest hardware report:** the 150 ms steering cutoff eliminated continuous steering noise and driving improved by observation. Steering remains weak; brief steering noise, low-speed drive noise, and sideways travel remain. Current/voltage and speed are unmeasured. A 200–230 ms pulse is proposed only; the current candidate is now 200 ms; results pending. See [Test 9](documentation/testing/TEST_LOG.md#test-9--user-reported-hardware-results-after-150-ms-steering-cutoff).
 
 - Current [pulse-steering test sketch](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) implements the user's requested steering-power cutoff while preserving latched drive. Continuous-noise improvement is now user-reported; stall diagnosis and quantitative performance remain unverified. Unpowered steering position is not guaranteed.
 
-- BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched drive, bounded150 ms steering pulses, reversed drive polarity, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
+- BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched drive, bounded 200 ms steering pulses, reversed drive polarity, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
 - Brief steering noise and drive noise around speed 30 persist; the earlier 1,000 uF/50 V capacitor experiment did not eliminate sound. The latest pulse trial had no electrolytic capacitor installed. Drive slows when steering activates. Causes remain unmeasured.
 
 - Electronics supply: user reports correcting an overlapping battery/wire connection, working switch, and ESP32 power LED. Accurate output voltage, load capability, and heating remain unverified.

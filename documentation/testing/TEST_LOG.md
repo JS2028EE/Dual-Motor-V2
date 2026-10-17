@@ -207,3 +207,8 @@ Replacement 3.7 V / 500 mAh cell is only a proposal. Cell discharge rating, prot
 ### Outcome
 
 Partial success: continuous steering noise resolved in the reported trial; driving behavior improved by observation. Remaining work: weak steering, brief activation noise, low-duty drive noise, sideways travel, and supply/load measurements. Actual power savings, steering angle, stall current and cause of remaining weakness are not yet verified.
+
+
+## Test 10 — Three-test steering plan and 200 ms candidate
+
+October 17, 2026. User requested a duration trial, a bench-source trial, and a combined trial, all with the electrolytic capacitor installed. See [full matrix](STEERING_TEST_MATRIX.md). Baseline with the same capacitor is added to distinguish capacitor effects. Current firmware now uses 200 ms; use 150 ms for baseline and source-only comparison. 230 ms is a later candidate, not implemented. Source remains 6 V, not an overvoltage trial. Host logic tests passed; hardware results pending. Prior across-terminal current readings are invalid and are not used to size the supply.
