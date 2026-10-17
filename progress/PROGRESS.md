@@ -40,6 +40,9 @@ Checked items record documentation and user reports, not independent hardware ve
 - [ ] Confirm capacitor selection and local supply bypassing.
 - [ ] Inspect fit, weigh complete car, and measure wheel size/RPM/gearing.
 - [ ] Inspect steering centering, feedback, and limits.
+- [ ] Open steering mechanism with power disconnected; identify removed parts, gear reduction, mounting support, linkage alignment, and binding.
+- [ ] Restore needed support/gearing and assess minimal material-compatible lubrication if appropriate.
+- [ ] After mechanical inspection and electrical checks, consider a brief steering-only 100% duty test at the unchanged 6 V rail; not yet performed.
 - [ ] Identify sensor/buzzer supply requirements and accessory drivers.
 
 ## Next control and software work

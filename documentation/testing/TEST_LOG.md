@@ -94,6 +94,28 @@ Recorded October 16–17, 2026, America/New_York. These records distinguish user
 
 **Status:** Noise remains unresolved. No reliable loaded rail/current/RPM measurements or complete stall/temperature checks were provided. See [investigation and proposed solutions](MOTOR_NOISE_AND_LOAD.md).
 
+## Steering strength and mechanical inspection plan — October 17
+
+**New observation:** The user reports weak steering: the wheels turn only a small amount and the mechanism does not feel sufficiently stable or firmly connected.
+
+**Relevant history:** The user removed some mechanical pieces in an attempt to make it faster. Exact parts and any change to the steering gearing/support have not been identified.
+
+**Possible explanations, not confirmed:** Removed gear reduction or structural support, loose mounting/linkage, gear misalignment, binding/friction, supply/driver losses, or the current fixed approximately 50% steering PWM. No single cause has been established.
+
+**Plan for the next work session (user called it "tomorrow"):**
+- Disconnect USB and both batteries before opening or adjusting the steering assembly.
+- Inspect the inside, gears, linkage, mounting, shafts, centering arrangement, and end stops.
+- Identify the removed pieces and whether restoring them improves support or torque.
+- Check free motion and alignment before applying power.
+- If lubrication is appropriate for the materials, use only a tiny amount of plastic-compatible lubricant on the relevant mechanical joints/gears, away from electrical parts. No lubricant has been reported applied yet.
+- Reassemble securely, then plan brief controlled comparisons with reliable voltage/current readings.
+
+**Electrical/test decision:** Keep motor boost target at 6 V. Raising it to 8 V was proposed by the user but not adopted. A brief steering-only test at 100% PWM, drive disabled, was discussed but has NOT been performed or added to the code. The recorded test sketch still uses approximately 50% steering duty.
+
+**Concept clarification:** The bridges share a supply; they do not split its voltage equally. Motor torque is approximately proportional to winding current, while attainable speed generally increases with applied voltage under comparable load. Available wheel force also depends on gearing and wheel radius. These relationships do not establish the cause of weak steering.
+
+**Status:** Inspection, lubrication, repair, and the proposed duty comparison are pending. No motor/driver replacement, voltage increase, or confirmed fix is recorded.
+
 ## Simulation observations
 
 ### Initial movement example — October 16
