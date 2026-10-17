@@ -2,6 +2,14 @@
 
 October 17, 2026. Proposed tests; no outcomes reported yet. Current default test firmware is now 200 ms. The earlier hardware result used 150 ms without an electrolytic capacitor: continuous noise stopped, but steering remained weak.
 
+## Mechanical setup update before Test 2
+
+October 17, 2026. Jay reports replacing the steering gears with lighter gears; the mechanism still turns. This is a user-performed hardware modification, not a firmware change. Gear tooth counts, gear ratio, material, mass, geometry, friction, torque effect, and exact timing relative to Test 1 were not provided. The statement about whether these gears make steering harder was incomplete; no torque improvement or reduction is claimed.
+
+Record this modification as part of the installation/setup history before interpreting Test 2. Lower gear mass alone does not establish improved steering torque. Do not assume the reduction ratio stayed the same.
+
+Keep this gear setup fixed for the battery baseline and bench-source comparison. If gears changed since the battery trial, repeat the battery baseline with the replacement gears and the same 150 ms pulse/capacitor/load before comparing it with the source-only bench test. Otherwise differences could arise from mechanics as well as source. Test 2 remains pending; no new movement result, firmware change, or supply setting is recorded by this note.
+
 ## Hypothesis and timing choice
 
 Jay proposes that 150 ms gives insufficient steering travel, and that supply capability may also contribute to weak steering. Use 200 ms first: 33% more powered time than 150 ms. 230 ms would be 53% more, not double. A kinematic estimate at unchanged movement speed gives the same ratios for travel, only while moving freely. Unknown friction, gearing, motor speed and end-stop timing prevent predicting an adequate duration.

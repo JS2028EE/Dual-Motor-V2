@@ -256,3 +256,13 @@ Use the previously documented source-disconnection wiring and current-limit proc
 ### Status
 
 Test 1: partial improvement when unloaded; fails the practical requirement to steer under ground load/while driving. Test 2 and Test 3 results pending. No firmware, PWM duty, voltage, capacitor wiring, separate supply, battery chemistry, or mechanical change was implemented by this documentation update.
+
+
+## Mechanical setup update before Test 2
+
+October 17, 2026. Jay reports replacing the steering gears with lighter gears; the mechanism still turns. This is a user-performed hardware modification, not a firmware change. Gear tooth counts, gear ratio, material, mass, geometry, friction, torque effect, and exact timing relative to Test 1 were not provided. The statement about whether these gears make steering harder was incomplete; no torque improvement or reduction is claimed.
+
+Record this modification as part of the installation/setup history before interpreting Test 2. Lower gear mass alone does not establish improved steering torque. Do not assume the reduction ratio stayed the same.
+
+Keep this gear setup fixed for the battery baseline and bench-source comparison. If gears changed since the battery trial, repeat the battery baseline with the replacement gears and the same 150 ms pulse/capacitor/load before comparing it with the source-only bench test. Otherwise differences could arise from mechanics as well as source. Test 2 remains pending; no new movement result, firmware change, or supply setting is recorded by this note.
+
