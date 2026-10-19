@@ -22,7 +22,7 @@ These results support the combined timing/source explanation for the tested setu
 ## Preserved firmware
 
 Current sketch: [DualMotorV2_BLE_Pulse.ino](../../firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino).
-- ESP32-WROOM-32D; L293D; no C3.
+- ESP32-WROOM-32D; L293D.
 - USB Serial and BLE controls.
 - 200 ms steering pulses, fixed 128/255 steering duty at 1 kHz.
 - Latched driving, reversed drive polarity, startup speed 100.

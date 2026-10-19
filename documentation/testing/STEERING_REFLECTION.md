@@ -39,7 +39,7 @@ Current test sketch: [DualMotorV2_BLE_Pulse.ino](../../firmware/testing/DualMoto
 - Forward/back remain latched, with their electrical polarity reversed.
 - Startup speed remains 100; speed_N accepts integer settings from 0 to 100.
 - Lowercase stop stops both motors; BLE disconnect also stops them.
-- The architecture remains ESP32-WROOM-32D plus L293D. No C3 is used.
+- The architecture remains ESP32-WROOM-32D plus L293D.
 
 Host logic tests passed for timing, repeated commands, reversed drive, continued driving, stop behavior, speed zero, and timer rollover. Actual ESP32 compilation and hardware verification remain pending. This is test firmware, not a validated complete vehicle controller.
 

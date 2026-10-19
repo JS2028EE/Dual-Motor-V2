@@ -1,6 +1,6 @@
 # Current limitations
 
-Updated October 17, 2026. This file covers the ESP32-only car in the [block diagrams](../diagrams/README.md). Earlier C3/S3 limitations are retained separately as [historical notes](../documentation/history/CONTROLLER_LIMITATIONS.md).
+Updated October 17, 2026. This file covers the ESP32-only car in the [block diagrams](../diagrams/README.md).
 
 ## Observed and unresolved
 
@@ -35,7 +35,6 @@ A fixed 5 V jumper is a valid logic HIGH. Setting a future enable GPIO LOW shoul
 
 ## Firmware and sensing
 
-- No C3 or S3 controller is used; their retained files are historical only.
 - BLE motor-control TEST sketches and selected six-GPIO test mapping are now recorded; no complete validated vehicle firmware, autonomous sensing, or production app integration exists.
 - Fixed 5 V control jumpers must be removed before GPIO connection. GPIOs must not receive 5 V.
 - Enable pull-downs, startup/disconnect/stop behavior and mixed-power states are not electrically validated. Current test code latches DRIVE with NO command timeout; steering now has a 150 ms pulse limit and same-side-repeat guard, but no physical end-limit feedback. BLE stop is software, not hardware isolation.
@@ -70,3 +69,8 @@ The user's stall explanation is plausible, not a confirmed physical diagnosis. C
 ## Latest combined test and battery transition — October 17
 
 User reports successful driving/steering with 200 ms pulses on a 6 V bench supply limited to 0.60 A, with displayed current up to about 0.55 A. This supersedes earlier statements that practical combined steering has not yet worked; it does not establish transient current, thermal endurance, actual regulated voltage during every event, or all surfaces/loads. New portable selection is a 1,000 mAh motor cell and smaller electronics cell; cell discharge/protection/charge compatibility and converters remain unvalidated. The battery-side current can exceed the 6 V output current. Exact smaller-cell capacity and final capacitor installation remain unconfirmed. No app/site/map/GPS speed or autonomous behavior has been implemented. Earlier switch-off motion and charger heating remain unresolved. See [milestone](../documentation/testing/DRIVING_STEERING_MILESTONE.md).
+
+
+## App and wireless scope — October 19
+
+BLE and USB Serial motor commands exist; the selected Wi-Fi vehicle link and dedicated app are not implemented. Navigation, sensing, automation, waypoints, measured speed/distance and maps need integration and validation. Current PWM/logged states are not actual telemetry. Define command ownership, link-loss timeout, manual override/local stop, localization validity and stale-data behavior before autonomous use. See [app roadmap](../documentation/ui/APP_PLAN.md).

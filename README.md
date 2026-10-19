@@ -1,79 +1,73 @@
 # Dual Motor V2
 
-An ESP32 robotic car with one motor for forward/reverse and one motor for steering.
+An ESP32-WROOM-32D robotic car with one drive motor, one steering motor, and an L293D driver. A phone or computer will communicate directly with the car over Wi-Fi or Bluetooth through a dedicated app.
 
-**Current revision: V2.7.0 pulse-steering test revision — October 17, 2026.** The damaged C3 is excluded. The car will use the ESP32-WROOM-32D and receive manual commands from a phone or computer over Wi-Fi or Bluetooth. The earlier C3/S3 handheld-controller design is historical. **No C3 or S3 controller is used or required in the active build.** The block diagrams and current decision record define the plan.
+**Documentation revision V2.8.0 — October 19, 2026.** This update consolidates the vehicle and app plan. It does not add Wi-Fi firmware or a working app.
 
-## Latest milestone — October 17
+## Working milestone
 
-**Jay reports successful driving and steering together using the 6 V bench source (0.60 A limit) and 200 ms steering pulse.** Displayed current reportedly stayed at or below approximately 0.55 A during observed interactions; this is not a measured transient peak or universal motor rating. See [complete results and debugging record](documentation/testing/DRIVING_STEERING_MILESTONE.md).
+Jay reports successful driving and steering together using a 6 V bench supply with a 0.60 A current limit and 200 ms steering pulses. The supply display reportedly stayed at or below approximately 0.55 A during observed interactions. These are user-reported bench results, not transient-current or thermal certification.
 
-New selected battery allocation: **1,000 mAh cell for motors; smaller cell (previously 500 mAh, exact label to confirm) for electronics.** Portable integration, protection/charging and boost load capability remain pending. See [battery decision](documentation/power/BATTERY_REALLOCATION.md). Control UI, GPS speed/map, automatic mode and accessories are next ideas, not implemented features.
+Current [motor test firmware](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) supports:
+- BLE text commands and USB Serial at 115200 baud.
+- Latched forward/back driving, with the electrical mapping reversed for the motor wiring.
+- One 200 ms left/right steering pulse at approximately 50% PWM duty, then steering off.
+- Integer speed_0 through speed_100; startup setting 100 with motors stopped.
+- stop for both motors; BLE link-change stops and input-error handling.
+- Command-state logs, not sensor measurements.
 
-## Current plan
+Same-side steering repeats are ignored until opposite or stop. USB unplug is not a detected stop; no drive watchdog exists yet. Earlier motor test sketches remain for reproducing the investigation.
 
-- ESP32-WROOM-32D development board as the vehicle controller.
-- L293D to control two existing 3–6 V brushed DC motors: drive and steering.
-- Manual wireless control plus planned automatic obstacle avoidance.
-- Front ultrasonic sensor, GPS, buzzer, and two white headlights.
-- New motor source selection: 1,000 mAh rechargeable cell -> dedicated 6 V boost; earlier three-cell pack is test history.
-- Smaller rechargeable cell for electronics -> separate 5 V boost; previously identified as 500 mAh, exact label to confirm.
-- Use two independent boost converters: 6 V motor rail and 5 V electronics rail; complete integration and load capability remain unverified.
-- Use a TP4056-style charger for the electronics cell and two on/off switches, one per supply branch (reported three-terminal switch: likely SPDT used for an SPST function); charge with both load switches off.
-- Use GNU Octave for initial movement and electrical estimates, then replace assumptions with measurements.
+## App and vehicle roadmap
 
-**Status:** successful combined bench-powered driving/steering is user-reported; portable-power integration and complete vehicle functions remain pending. Earlier tests and hypothetical MATLAB/Octave examples are retained below as history. Electronics switch/LED power-up is now user-reported; its electrical validation, full vehicle firmware, GPS/map/API integration, steering, charging thermal behavior, and load capability are not validated. The motor unexpectedly ran with its motor-power switch off during a USB-powered test; that path remains unresolved.
+| Capability | Status |
+|---|---|
+| ESP32 motor control over Bluetooth BLE | Test firmware and user hardware results recorded |
+| USB Serial commands and logs | Implemented testing interface |
+| Wi-Fi vehicle link | Selected transport; implementation and validation pending |
+| App with simultaneous driving/steering | Planned |
+| Sensor readings and status | Planned; sensor integration pending |
+| GPS location and map/navigation | Planned |
+| Waypoints and automated movement | Planned; localization, feedback and stopping checks required |
+| Speed and distance traveled | Planned; measurement method/calibration pending |
+| Buzzer, front ultrasonic sensor, white headlights | Planned |
+
+The app should display actual measurements with freshness/validity status, distinguish manual and automatic modes, and provide an accessible stop. Navigation goals go to the vehicle; local control and obstacle/stop decisions must not depend on the app staying connected. See [app plan](documentation/ui/APP_PLAN.md) and [wireless plan](documentation/network/WIRELESS_LINK.md).
+
+## Hardware and power
+
+- Original ESP32-WROOM-32D development board; L293D; two existing 3–6 V brushed motors.
+- Motor rail: 6 V target. Electronics rail: separate regulated 5 V into the verified development-board input and driver logic.
+- New selected allocation: 1,000 mAh rechargeable cell for motors; smaller electronics cell, previously identified as 500 mAh, exact label to confirm.
+- Two separate boost stages and switched supply branches; protection, charging and portable load capability require verification.
+- Common protected load ground; positive rails remain separate. Motor return current must not run through ESP32 PCB traces.
+- The 1,000 mAh capacity is not a discharge-current rating. See [battery allocation](documentation/power/BATTERY_REALLOCATION.md).
+
+The bench success does not resolve earlier unintended motor power with its supply switch off, charger heating, or all mixed USB/battery power paths. See the limitations before extending the build.
 
 ## Documentation
 
-| Topic | File |
+| Topic | Reference |
 |---|---|
-| Active design decisions | [Decisions](documentation/DECISIONS.md) |
-| Successful combined bench test | [Milestone and next steps](documentation/testing/DRIVING_STEERING_MILESTONE.md) |
-| New battery allocation | [Battery reallocation](documentation/power/BATTERY_REALLOCATION.md) |
-| Tests, notes, and observations | [Test log](documentation/testing/TEST_LOG.md) |
-| Steering reasoning, proposed fixes, and engineering reflection | [Steering investigation and reflection](documentation/testing/STEERING_REFLECTION.md) |
-| Power terminals, rails, charger, and switches | [Power pinout plan](documentation/pin-configuration/POWER_PINOUT.md) |
-| Signal and power block diagrams | [Block diagrams](diagrams/README.md) |
-| Parts, power, control, and measurement plan | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
-| Octave script and assumptions | [Simulation notes](simulations/README.md) |
-| Current checklist and earlier progress | [Progress](progress/PROGRESS.md) |
-| Electrical and mechanical limits | [Limitations](limitations/LIMITATIONS.md) |
-| Electronics power-chain model | [MATLAB / Octave script](simulations/electronics_power_chain.m) |
-| BLE motor test code / commands | [Testing guide](firmware/testing/README.md) |
-| Motor noise and steering-load slowdown | [Investigation](documentation/testing/MOTOR_NOISE_AND_LOAD.md) |
-| Revision record | [V2.7.0](versions/V2.7.0.md) |
-| Earlier controller overview | [Historical README](documentation/history/CONTROLLER_README.md) |
+| Current decisions | [Decision record](documentation/DECISIONS.md) |
+| Architecture | [Vehicle plan](documentation/architecture/VEHICLE_V2.md) |
+| Signal and power block diagrams | [Diagrams](diagrams/README.md) |
+| Future control/telemetry app | [App roadmap](documentation/ui/APP_PLAN.md) |
+| Wi-Fi/Bluetooth roles and protocol status | [Wireless plan](documentation/network/WIRELESS_LINK.md) |
+| Power terminals | [Power pinout](documentation/pin-configuration/POWER_PINOUT.md) |
+| Latest battery allocation | [Battery decision](documentation/power/BATTERY_REALLOCATION.md) |
+| Working movement milestone | [Results](documentation/testing/DRIVING_STEERING_MILESTONE.md) |
+| Observations and sequential tests | [Test log](documentation/testing/TEST_LOG.md) |
+| Steering/source comparison | [Test matrix](documentation/testing/STEERING_TEST_MATRIX.md) |
+| Motor noise/load investigation | [Investigation](documentation/testing/MOTOR_NOISE_AND_LOAD.md) |
+| Reasoning and engineering reflection | [Reflection](documentation/testing/STEERING_REFLECTION.md) |
+| Firmware and commands | [Testing guide](firmware/testing/README.md) |
+| Serial logs | [Serial guide](documentation/testing/SERIAL_CONTROL.md) |
+| MATLAB/Octave assumptions and examples | [Simulations](simulations/README.md) |
+| Remaining work | [Progress](progress/PROGRESS.md) |
+| Constraints and unverified behavior | [Limitations](limitations/LIMITATIONS.md) |
+| Current documentation revision | [V2.8.0](versions/V2.8.0.md) |
 
-## First Octave result
+## Modeling and evidence
 
-With an assumed 65 mm wheel, 120 wheel RPM, and a 1.5 s response time, the example approaches **0.41 m/s** and covers **3.47 m in 10 s**. The user ran the initial script and shared the movement plots.
-
-These are hypothetical results. The movement model does not yet couple battery voltage, current, driver loss, mass, or motor torque to speed. The boost comparison in the baseline script changes electrical estimates only. The latest power/control model adds a simplified voltage-to-RPM assumption; it still does not model torque or mass.
-
-## Earlier test reports and models
-
-The latest combined success and battery selection above supersede earlier pending-result/default-timing statements in this historical list.
-
-- New [steering test matrix](documentation/testing/STEERING_TEST_MATRIX.md): capacitor baseline, 200 ms timing trial, 6 V bench-source comparison at 150 ms, then combined 200 ms/bench test. No new hardware result yet.
-
-- **Latest hardware report:** the 150 ms steering cutoff eliminated continuous steering noise and driving improved by observation. Steering remains weak; brief steering noise, low-speed drive noise, and sideways travel remain. Current/voltage and speed are unmeasured. A 200–230 ms pulse is proposed only; the current candidate is now 200 ms; results pending. See [Test 9](documentation/testing/TEST_LOG.md#test-9--user-reported-hardware-results-after-150-ms-steering-cutoff).
-
-- Current [pulse-steering test sketch](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) implements the user's requested steering-power cutoff while preserving latched drive. Continuous-noise improvement is now user-reported; stall diagnosis and quantitative performance remain unverified. Unpowered steering position is not guaranteed.
-
-- BLE motor-control test code is recorded: startup drive duty100%, integer speed_N commands, latched drive, bounded 200 ms steering pulses, reversed drive polarity, and stop-all on lowercase stop/disconnect. No complete vehicle firmware is released.
-- Brief steering noise and drive noise around speed 30 persist; the earlier 1,000 uF/50 V capacitor experiment did not eliminate sound. The latest pulse trial had no electrolytic capacitor installed. Drive slows when steering activates. Causes remain unmeasured.
-
-- Electronics supply: user reports correcting an overlapping battery/wire connection, working switch, and ESP32 power LED. Accurate output voltage, load capability, and heating remain unverified.
-- New electronics-chain model: stage voltages, battery versus output current, switch/protection/boost losses, and a separate charging-loss example.
-
-- Direct boosted drive motor: visibly faster than the earlier 3.7 V battery test; no RPM/current measurement.
-- Through L293D: visually estimated roughly 50% slower; driver loss versus supply sag not measured.
-- Motor switch off: motor still ran when USB powered the ESP32 board/driver logic; switching motor power on increased speed. The source path is not diagnosed.
-- Second Octave example: forward/disable/reverse sequence, two supply current estimates, and shutdown at 18 s. User-shared plots match the script assumptions.
-
-See the test log for charging heat and multimeter troubleshooting. Model outputs are not hardware measurements.
-
-## Historical controller work
-
-C3/S3 firmware and earlier controller notes are retained as development history. They do not implement the current ESP32-only vehicle plan. The S3 display and joystick controller are outside the active build scope.
+Simulation outputs depend on assumed parameters and do not prove motor behavior. For example, the initial assumed 65 mm wheel and 120 wheel RPM model approached 0.41 m/s; this was not measured car speed. Preserve the test log's distinction between observations, hypotheses, host code tests, and measured hardware results.

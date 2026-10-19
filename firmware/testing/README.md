@@ -4,7 +4,7 @@
 
 Use [DualMotorV2_BLE_Pulse.ino](DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). This revision implements bounded steering pulses and reverses drive polarity to match the user's reported swapped motor wires. It is test firmware, not a validated complete vehicle controller.
 
-Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No C3/S3 controller and no extra Arduino libraries. BLE name remains `DualMotorV2`; Serial Monitor 115200.
+Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No extra Arduino libraries. BLE name remains `DualMotorV2`; Serial Monitor 115200.
 
 | Command | Current behavior |
 |---|---|

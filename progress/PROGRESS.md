@@ -1,6 +1,17 @@
 # Current V2 progress
 
-Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and [current decisions](../documentation/DECISIONS.md). No C3/S3 controller is part of this build.
+Updated October 17, 2026. Follow the [block diagrams](../diagrams/README.md) and [current decisions](../documentation/DECISIONS.md).
+
+## App and wireless scope — October 19
+
+- [x] Consolidate the repo around one ESP32-WROOM-32D car and a direct phone/computer app.
+- [x] Define app requirements for navigation, sensing, automation, waypoints, distance traveled, speed and simultaneous controls.
+- [x] Document implemented BLE/USB separately from planned Wi-Fi integration.
+- [ ] Build/validate the app and Wi-Fi link with common command/state semantics.
+- [ ] Add session ownership, drive watchdog, invalid/stale telemetry handling and reconnect tests.
+- [ ] Integrate/calibrate actual speed, distance, GPS/sensor data before map/waypoint automation.
+
+See [app plan](../documentation/ui/APP_PLAN.md). No app/Wi-Fi firmware was added by this documentation cleanup.
 
 ## Latest milestone
 
@@ -75,4 +86,4 @@ Checked items record documentation and user reports, not independent hardware ve
 - [ ] Test automatic obstacle behavior and stopping distance.
 - [ ] Replace simulation assumptions with measurements and a torque/mass model.
 
-[Earlier C3/S3 progress](../documentation/history/CONTROLLER_PROGRESS.md) is retained only as history.
+

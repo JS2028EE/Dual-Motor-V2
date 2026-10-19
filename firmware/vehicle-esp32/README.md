@@ -1,9 +1,9 @@
-# ESP32 vehicle integration
+# Vehicle integration
 
-Current board: original ESP32-WROOM-32D. Follow [block diagrams](../../diagrams/README.md).
+The original ESP32-WROOM-32D is the car controller. Use the current [motor test sketch](../testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino) and [guide](../testing/README.md).
 
-The motor-only BLE [test sketches](../testing/README.md) now record the selected GPIO mapping, commands, drive PWM, steering PWM, and stop behavior. They are testing code, not complete vehicle firmware.
+BLE and USB Serial control are implemented for testing; 200 ms steering and bench-powered driving/steering success are user-reported. Wi-Fi firmware and the dedicated app remain planned.
 
-GPS, ultrasonic sensing, white headlights, buzzer, automatic mode, GPS/map/API integration, validated shutdown, and steering limit/position behavior remain pending. No C3/S3 controller is used.
+Next integration covers simultaneous app controls, sensing, GPS/map/navigation, automation, waypoints, actual speed and distance traveled, buzzer and white headlights. See [app roadmap](../../documentation/ui/APP_PLAN.md) and [wireless plan](../../documentation/network/WIRELESS_LINK.md).
 
-Before integration, investigate [audible noise and shared-load slowdown](../../documentation/testing/MOTOR_NOISE_AND_LOAD.md), earlier unintended motor power, and power/thermal limits. Do not assume the latched steering test can be held against an end stop.
+Portable power, command watchdog, local stopping, steering feedback/limits, electrical isolation and sensor measurements need validation before treating this as complete vehicle firmware.

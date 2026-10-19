@@ -1,6 +1,6 @@
 # ESP32 vehicle plan
 
-Updated October 17, 2026. This plan supersedes the handheld-controller-first scope.
+Updated October 19, 2026. This plan describes the ESP32 vehicle and direct phone/computer app.
 
 ## Latest update
 
@@ -10,11 +10,11 @@ Successful combined bench-powered driving/steering is user-reported at 6 V, sour
 
 See the [power pinout plan](../pin-configuration/POWER_PINOUT.md) for TP4056 B/OUT/IN terminals, two switched positive branches (likely SPDT switches used for SPST on/off), separate boost stages, supply rails, and protected common ground. Use charger OUT- as load ground; do not externally bridge B- to OUT-. The six motor-test GPIO assignments and BLE commands are recorded in the [testing guide](../../firmware/testing/README.md); sensor/accessory signal assignments remain deferred. Two boost stages are required by the proposed rails; module identities and complete integration remain unverified.
 
-See [current decisions](../DECISIONS.md) and [bench test log](../testing/TEST_LOG.md). No C3 or S3 controller is part of the active build. Bench USB power is temporary; it does not change the battery/charger/two-boost architecture.
+See [current decisions](../DECISIONS.md) and [bench test log](../testing/TEST_LOG.md). Bench USB power is temporary; it does not change the battery/charger/two-boost architecture.
 
 ## Goal and control
 
-Use one ESP32-WROOM-32D development board, one drive motor, and one steering motor. A phone or computer will provide manual commands through Wi-Fi or Bluetooth. The app, protocol, command format, and timeout are still to be selected.
+Use one ESP32-WROOM-32D development board, one drive motor, and one steering motor. A phone or computer will provide manual commands through Wi-Fi or Bluetooth. The dedicated app will handle navigation, sensing, automation, waypoints, distance traveled, speed and simultaneous manual driving/steering. Existing BLE/USB test commands are documented; Wi-Fi integration, the unified app protocol and command watchdog remain pending. See [app roadmap](../ui/APP_PLAN.md) and [wireless plan](../network/WIRELESS_LINK.md).
 
 Automatic mode will initially use a front ultrasonic sensor to stop before obstacles. Avoidance behavior requires steering tests and stopping-distance measurements. GPS is for outdoor location/telemetry, not precise obstacle detection.
 

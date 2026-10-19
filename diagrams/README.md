@@ -1,14 +1,17 @@
 # V2 block diagrams
 
-Current planning revision: October 17, 2026. This is the agreed active architecture: no C3 or S3 handheld controller. These are architecture diagrams, not a pin-level wiring schematic.
+Current planning revision: October 19, 2026. One ESP32-WROOM-32D vehicle connects directly to a phone/computer app over Wi-Fi or Bluetooth. These are architecture diagrams, not a pin-level wiring schematic.
 
 ## Signals and control
 
+The app roadmap covers simultaneous control, navigation/maps, sensing, automation, waypoints, distance traveled, speed and diagnostics. See [app plan](../documentation/ui/APP_PLAN.md) and [wireless plan](../documentation/network/WIRELESS_LINK.md). USB Serial remains a bench interface. GPS, accessory sensing and automation below are planned, not integrated telemetry.
+
+
 ```mermaid
 flowchart TD
-    Client["Phone or computer"] <-->|BLE motor test; full interface pending| ESP["ESP32-WROOM-32D"]
+    Client["Phone/computer app: planned"] <-->|"Wi-Fi planned; Bluetooth BLE test implemented"| ESP["ESP32-WROOM-32D"]
     Ultra["Front ultrasonic sensor"] -->|"Distance; protect Echo input if 5 V"| ESP
-    GPS["GPS module"] -->|UART location data| ESP
+    GPS["GPS module: integration pending"] -->|"UART location/speed data to validate"| ESP
     Feedback["Steering feedback: to be identified"] -.-> ESP
     ESP -->|"Four direction signals and two PWM enables"| Driver["L293D"]
     Driver --> Drive["Drive motor: forward and reverse"]
@@ -69,3 +72,18 @@ This diagram shows intended final wiring. USB-fed ESP32 5 V and fixed HIGH drive
 The motor ran with its supply switch off during the reported bench test. That is an unresolved observation, not intended behavior depicted by this diagram. See [test log](../documentation/testing/TEST_LOG.md) and [limitations](../limitations/LIMITATIONS.md). GPIO test code now exists, but power isolation and startup/disconnect/stop performance are not electrically validated.
 
 Latest capacitor observation: the user reports1,000 uF/50 V and pre-existing motor ceramics; audible noise persisted. Earlier supply planning named 100 uF. The diagram shows recommended bulk-filter placement, not proof of the actual installation. See [noise/load investigation](../documentation/testing/MOTOR_NOISE_AND_LOAD.md). The latest battery allocation supersedes the earlier three-cell source; protection/charging details are pending.
+
+## Planned app functions and feedback
+
+```mermaid
+flowchart TD
+    App["Phone/computer app"]
+    App --> Controls["Simultaneous drive and steering; stop"]
+    App --> Navigation["Map, waypoints and automation goals"]
+    ESP["ESP32 vehicle: local control and sensing"] --> Data["Validated speed, distance and sensor status"]
+    Controls --> ESP
+    Navigation --> ESP
+    Data --> App
+```
+
+This describes intended data flow. Current logs are commanded GPIO/PWM states; speed, distance, GPS/map and sensor readings must not be displayed as measured until implemented and validated. Local stop/obstacle behavior remains necessary when the app disconnects.
