@@ -293,3 +293,35 @@ Next: use the same bench wiring, gear setup, starting angle, capacitor arrangeme
 ## Test 14 — Combined driving/steering success reported
 
 October 17, 2026. User reports Test 3 works: 200 ms steering with the 6 V bench source set to a 0.60 A limit supports driving and steering together. Displayed current reportedly did not exceed approximately 0.55 A during observed interactions, now described as a live reading; fast peaks and universal minimum current are not established. Exact CV/CC trace, loaded voltage, surface/angle metrics and capacitor configuration were not supplied. See [full milestone](DRIVING_STEERING_MILESTONE.md) for the debugging sequence, battery reallocation, attribution, limits and deferred UI/GPS/accessory work. Session ends with power-down/cleanup. No further code or feature changes in this update.
+
+
+## Test 15 — Portable battery setup and custom BLE website driving/steering
+
+October 30, 2026. Jay reports a new successful vehicle test using the portable battery arrangement and the custom browser-based BLE controller created for Dual Motor V2. This is a user-reported functional result; voltage/current measurements, runtime, thermal readings and a formal repeated-test record were not supplied.
+
+### Updated power arrangement
+
+The earlier three-cell 1.5 V motor pack (nominally 4.5 V; previously reported as 4.68 V before testing) is no longer being used for the motor branch. The current reported arrangement is:
+
+- **Motor branch:** one rechargeable 3.7 V, 1,000 mAh cell -> dedicated boost converter -> motor supply rail for the L293D/motors (6 V is the documented target for the existing 3–6 V motors).
+- **ESP32/electronics branch:** a separate rechargeable 3.7 V, 500 mAh cell -> its own boost converter -> 5 V input to the ESP32 development board.
+
+The two branches remain separate on their positive rails, with the required common circuit ground. Jay reports that this battery arrangement now powers the vehicle successfully and that the motors receive the intended boosted supply. Exact loaded converter output, motor-terminal voltage, cell discharge current, converter temperature, protection behavior and runtime have not yet been instrumentally verified. The 1,000 mAh and 500 mAh figures describe capacity, not allowable discharge current.
+
+### Driving and steering result
+
+Jay reports that the car now drives successfully and steering works well during the same test. The custom website replaces the earlier reliance on a generic BLE-control app for this test: the browser website connects directly to the ESP32 over BLE and sends the existing movement commands. Keyboard driving uses W/A/S/D; the website sends the drive command on key press and sends `stop` when W or S is released. This press/release behavior is handled by the website, so it does not require a new ESP32 firmware upload when the existing firmware already supports the corresponding latched movement and `stop` commands.
+
+The user reports that the ESP32 is still running the previously uploaded firmware; no new firmware upload was performed for this website test. The website and its keyboard event handling are therefore the changed control-interface layer, not evidence of a newly flashed ESP32 build. The test result is recorded as successful driving and steering by user report; no measured steering angle, speed, distance or endurance is claimed.
+
+### Source-current reasoning — hypothesis retained with limits
+
+The earlier investigation recorded that the three-cell motor source entered current limiting during ground-load tests, and that a 6 V bench source with a 0.60 A limit supported combined driving/steering. Jay's current explanation is that the old three-cell pack could not supply sufficient current under load, with approximately 600 mA considered the relevant demand.
+
+Keep this as the working explanation, not a proven motor-current requirement: the earlier approximately 0.55 A figure was a bench-supply display observation during the successful test, not a measured minimum requirement or a motor nameplate rating. The L293D's 600 mA per-channel rating is also a driver rating, not proof that the motors continuously require 600 mA. The exact current drawn from the new 3.7 V cell will differ from current at the boosted motor rail and depends on converter efficiency and load. Measure cell-side and motor-rail behavior under driving plus steering before closing the power investigation.
+
+### Result and remaining verification
+
+**Reported functional result:** portable battery-powered driving works; steering works; the custom BLE website controls the vehicle. This supersedes the earlier status that the new battery allocation was only selected and awaiting first integration.
+
+**Still open:** verify both boost outputs under load, battery and converter current ratings, cell protection/charging arrangements, thermal behavior, USB-versus-battery isolation, and the previously unexplained motor-switch-off/backfeed path. Do not treat successful movement as electrical safety or endurance validation.
