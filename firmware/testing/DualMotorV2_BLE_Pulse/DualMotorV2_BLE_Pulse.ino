@@ -184,7 +184,7 @@ void handle(Command c) {
     return;
   }
   if (speedPercent==0) return;
-  int direction=c.action==LEFT ? -1 : 1;
+  int direction=c.action==LEFT ? 1 : -1;
   if (direction==lastSteerCommand) return; // No repeat or pulse extension.
   stopSteering();
   lastSteerCommand=direction;
