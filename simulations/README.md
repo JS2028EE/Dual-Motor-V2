@@ -104,3 +104,10 @@ No switching waveform, inductor/capacitor dynamics, control-loop stability, batt
 Power dissipated as heat is not temperature. Real temperature needs thermal resistance, environment, and measured behavior. The new power-LED observation and simulated 5 V output do not replace meter verification.
 
 Sources: [TI Working with Boost Converters](https://www.ti.com/lit/an/snva731/snva731.pdf) for power balance, and [TP4056 protected-module vendor documentation](https://shillehtek.com/blogs/shillehtek-product-manuals/tp4056-1a-lipo-battery-charging-board-type-c-with-current-protection-manual) for battery/load terminals and charging separation. Verify actual board and battery ratings.
+
+
+## Portable battery + updated control model: portable_battery_control_v3.m
+
+The V3 script models the newer split battery arrangement: a 3.7 V, 1,000 mAh motor cell feeding a nominal 6 V motor boost rail, and a separate 3.7 V, 500 mAh electronics cell feeding a nominal 5 V rail. It adds separate steering-only, forward-only, combined forward/left/forward/right, and power-flow figures. See [PORTABLE_BATTERY_CONTROL_V3.md](PORTABLE_BATTERY_CONTROL_V3.md) for exact assumptions, limits, and validation steps.
+
+Run \`portable_battery_control_v3\` from this folder. It uses no extra packages. This is a prediction baseline, not measured telemetry. The 85% boost efficiency, 0.25 ohm boost output droop, 0.15 ohm battery-path resistance, 2 V L293D path drop, and motor/electronics currents are assumptions. Capture the four figures and Command Window output, then compare them with safe bench measurements before changing assumptions.
