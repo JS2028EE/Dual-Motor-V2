@@ -57,7 +57,7 @@ The 0.25 ohm boost-output value is deliberately exposed as an assumption so its 
 
 ## What is and is not represented
 
-The battery model estimates voltage sag from a constant equivalent series resistance and solves the battery input current needed to supply converter input power. The boost converter is represented by a fixed efficiency and a simple output-droop resistance. The L293D is represented by a fixed total conducting drop in the motor-current path.
+The battery model estimates voltage sag from a constant equivalent series resistance and solves the battery input current needed to supply converter input power. For the motor branch, converter input power is calculated from the nominal 6 V output and load current; the assumed boost-output resistance then accounts separately for the rail voltage drop and its associated loss. This avoids counting the same output droop as both reduced converter output power and a separate loss. The boost converter is otherwise represented by a fixed efficiency. The L293D is represented by a fixed total conducting drop in the motor-current path.
 
 The speed graph uses a simplified linear relationship between motor-terminal voltage and wheel RPM, followed by a first-order response. It does not model torque, motor winding resistance/inductance, stall current, gearing, vehicle mass, friction, tire slip, or braking. The steering graph shows command pulses and electrical demand; it does not predict steering angle or turning radius.
 
