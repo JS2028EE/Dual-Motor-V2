@@ -87,3 +87,23 @@ Checked items record documentation and user reports, not independent hardware ve
 - [ ] Replace simulation assumptions with measurements and a torque/mass model.
 
 
+
+
+## Current status update — October 30, 2026
+
+This dated section supersedes earlier pending-status notes above where they conflict. Historical checklists are retained as the record of earlier stages.
+
+- [x] User reports successful driving and steering using the portable battery setup.
+- [x] Replace the former three-cell 1.5 V motor pack with a 3.7 V, 1,000 mAh motor cell and dedicated boost converter (6 V motor-rail target).
+- [x] Use a separate 3.7 V, 500 mAh cell and boost converter to provide 5 V to the ESP32 development board.
+- [x] Build and test a custom browser-based BLE controller website instead of relying on a generic BLE app.
+- [x] User reports driving and steering work with the website; ESP32 remained on its previously uploaded firmware. Website keydown/keyup handling sends movement commands and STOP on W/S release.
+- [ ] Measure both boosted rails and cell-side current under load; confirm cell protection/discharge ratings, converter capability, temperature, charging and runtime.
+- [ ] Resolve the previously observed motor-switch-off power path and verify USB/external-power isolation.
+- [ ] Install and validate sensors; record predictions, readings, range, repeatability and limitations.
+- [ ] Integrate GPS and investigate the appropriate GPS data interface plus a geolocation/map API.
+- [ ] Implement and test automation using validated sensor/location data, with safe stop and manual override.
+- [ ] Final integrated test: verify sensors and GPS/location, then re-test driving, steering, stopping and power stability with all new hardware installed.
+- [ ] Complete final documentation and evidence after the integrated test.
+
+The earlier ~550 mA bench display observation and 0.60 A bench current limit are not a proven 600 mA continuous motor requirement. Treat source-current limitation as the leading explanation for the earlier weak steering/drive slowdown, not a fully isolated or measured root cause. See [Test 15](../documentation/testing/TEST_LOG.md#test-15--portable-battery-setup-and-custom-ble-website-drivingsteering), [battery update](../documentation/power/BATTERY_REALLOCATION.md) and [milestone](../documentation/testing/DRIVING_STEERING_MILESTONE.md).
