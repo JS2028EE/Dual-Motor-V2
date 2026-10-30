@@ -54,3 +54,23 @@ Jay briefly mentioned a burnt smell, then withdrew the concern; there is no conf
 ## Engineering reflection
 
 This is a concrete observe–hypothesize–change–compare–report cycle. Jay connected mechanics, code and source behavior, tested unsuccessful intermediate changes and reported a working combined configuration. The record distinguishes his observation/hypothesis from AI-assisted code/documentation and unmeasured electrical claims. That progression supports a credible engineering portfolio; no admissions outcome or evaluator response is claimed.
+
+
+## Follow-up milestone — portable batteries and custom BLE website, October 30, 2026
+
+Jay now reports successful driving and steering from the portable battery arrangement, rather than only from the earlier bench supply. The former three-cell 1.5 V motor pack has been replaced by a separate 3.7 V, 1,000 mAh rechargeable motor cell and boost converter. The ESP32/electronics branch uses a separate 3.7 V, 500 mAh cell and its own boost converter to provide 5 V to the development board. The motor boost is intended to provide the documented 6 V motor-supply rail.
+
+A second control-interface test used the project's own browser-based BLE website instead of a generic BLE-control app. Jay reports that driving and steering both work well. The ESP32 remained on its previously uploaded firmware; the website handles keyboard press/release behavior by sending movement commands on keydown and `stop` on release of W/S. This explains why the car stops when the key is released without requiring a firmware reflash for that behavior.
+
+These are user-reported functional results. Loaded voltage/current, cell-side current, converter ratings, temperature, runtime and charging/protection behavior remain to be measured. The old pack's current limitation is a plausible explanation supported by earlier CC observations, but approximately 600 mA is not yet a measured universal motor requirement. See [battery reallocation](../power/BATTERY_REALLOCATION.md) and [Test 15](TEST_LOG.md#test-15--portable-battery-setup-and-custom-ble-website-drivingsteering).
+
+## Next phase — sensors, location and integrated validation
+
+1. Install the planned sensors (begin with the selected front ultrasonic sensor) and document wiring, power needs, expected behavior and limitations before testing.
+2. Make predictions for each sensor test, then test and record actual readings, repeatability, detection range and failure cases.
+3. Integrate the GPS receiver; investigate the appropriate GPS data interface and a geolocation/map API for displaying the vehicle's actual position. Distinguish GPS-derived position from network geolocation and do not present simulated data as a live fix.
+4. Develop the automation/control logic using validated sensor and location data, with safe stopping and manual override.
+5. Run a final integrated verification: check sensor readings, verify GPS location/map behavior, and test driving again with all new hardware installed. Recheck steering, forward/reverse, stop behavior, power stability and sensor operation while the vehicle is moving.
+6. Record remaining limitations, test evidence and final project documentation before calling the vehicle complete.
+
+The project is not yet complete: sensor integration, GPS/location work, automation and the final all-systems driving test remain future phases.
