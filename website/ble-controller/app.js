@@ -3,43 +3,33 @@ const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 const $ = selector => document.querySelector(selector);
 const connectButton=$("#connectButton"), disconnectButton=$("#disconnectButton"), statusDot=$("#statusDot"), connectionStatus=$("#connectionStatus"), deviceName=$("#deviceName"), speedSlider=$("#speedSlider"), speedValue=$("#speedValue"), lastCommand=$("#lastCommand"), vehicleResponse=$("#vehicleResponse"), activityLog=$("#activityLog");
-let device=null, rxCharacteristic=null, txCharacteristic=null, connected=false;
+const distanceValue=$("#distanceValue"), obstacleStatus=$("#obstacleStatus"), sensorStateTag=$("#sensorStateTag"), buzzerStateTag=$("#buzzerStateTag"), sensorToggle=$("#sensorToggle"), buzzerToggle=$("#buzzerToggle"), warningIndicator=$("#warningIndicator"), warningText=$("#warningText");
+let device=null, rxCharacteristic=null, txCharacteristic=null, connected=false, sensorEnabled=null, buzzerEnabled=null, lastDistance=null;
 const pressedKeys = new Set();
 const keyboardCommands = { w:"forward", a:"left", s:"back", d:"right" };
 
 function log(message){const empty=activityLog.querySelector(".log-empty");if(empty)empty.remove();const row=document.createElement("p");row.className="log-entry";const time=document.createElement("span");time.className="time";time.textContent=new Date().toLocaleTimeString();row.append(time,document.createTextNode(message));activityLog.prepend(row);while(activityLog.children.length>30)activityLog.lastElementChild.remove();}
-function setConnected(value){connected=value;statusDot.classList.toggle("connected",value);connectionStatus.textContent=value?"Bluetooth connected":"Not connected";connectButton.disabled=value;disconnectButton.disabled=!value;speedSlider.disabled=!value;document.querySelectorAll("[data-command]").forEach(button=>button.disabled=!value);if(!value){pressedKeys.clear();rxCharacteristic=null;txCharacteristic=null;vehicleResponse.textContent="Disconnected";}}
-async function sendCommand(command){if(!connected||!rxCharacteristic){log("Not connected — command not sent.");return;}try{const bytes=new TextEncoder().encode(command);if(rxCharacteristic.writeValueWithoutResponse)await rxCharacteristic.writeValueWithoutResponse(bytes);else await rxCharacteristic.writeValue(bytes);lastCommand.textContent=command;log("TX  "+command);}catch(error){log("Send failed: "+error.message);vehicleResponse.textContent="Send failed";}}
-function handleNotification(event){const value=new TextDecoder().decode(event.target.value).trim();if(!value)return;vehicleResponse.textContent=value;log("RX  "+value);}
-async function connect(){if(!navigator.bluetooth){log("Web Bluetooth unavailable. Use Chrome or Edge on desktop/Android over HTTPS.");connectionStatus.textContent="Browser does not support Web Bluetooth";return;}try{connectButton.disabled=true;connectionStatus.textContent="Choose DualMotorV2…";device=await navigator.bluetooth.requestDevice({filters:[{name:"DualMotorV2"}],optionalServices:[SERVICE_UUID]});deviceName.textContent=device.name||"DualMotorV2";device.addEventListener("gattserverdisconnected",()=>{setConnected(false);log("BLE disconnected. Firmware should stop both motor outputs.");});const server=await device.gatt.connect();const service=await server.getPrimaryService(SERVICE_UUID);rxCharacteristic=await service.getCharacteristic(RX_UUID);txCharacteristic=await service.getCharacteristic(TX_UUID);await txCharacteristic.startNotifications();txCharacteristic.addEventListener("characteristicvaluechanged",handleNotification);setConnected(true);log("Connected to "+(device.name||"DualMotorV2"));vehicleResponse.textContent="Connected — ready";}catch(error){setConnected(false);connectButton.disabled=false;log(error.name==="NotFoundError"?"No device selected.":"Connection error: "+error.message);connectionStatus.textContent="Connection failed";}}
+function setConnected(value){connected=value;statusDot.classList.toggle("connected",value);connectionStatus.textContent=value?"Bluetooth connected":"Not connected";connectButton.disabled=value;disconnectButton.disabled=!value;speedSlider.disabled=!value;document.querySelectorAll("[data-command]").forEach(button=>button.disabled=!value);sensorToggle.disabled=!value;buzzerToggle.disabled=!value;if(!value){pressedKeys.clear();rxCharacteristic=null;txCharacteristic=null;vehicleResponse.textContent="Disconnected";sensorEnabled=null;buzzerEnabled=null;lastDistance=null;distanceValue.textContent="—";obstacleStatus.textContent="Waiting for sensor telemetry";sensorStateTag.textContent="UNKNOWN";buzzerStateTag.textContent="UNKNOWN";warningIndicator.classList.remove("warning","danger");warningText.textContent="No live warning data";sensorToggle.textContent="Enable sensor";buzzerToggle.textContent="Enable buzzer";}}
+async function sendCommand(command){if(!connected||!rxCharacteristic){log("Not connected — command not sent.");return;}try{const bytes=new TextEncoder().encode(command+"\n");if(rxCharacteristic.writeValueWithoutResponse)await rxCharacteristic.writeValueWithoutResponse(bytes);else await rxCharacteristic.writeValue(bytes);lastCommand.textContent=command;log("TX  "+command);}catch(error){log("Send failed: "+error.message);vehicleResponse.textContent="Send failed";}}
+function updateTelemetry(fields){if(fields.distance!==undefined){const n=Number(fields.distance);if(Number.isFinite(n)&&n>0){lastDistance=n;distanceValue.textContent=n.toFixed(1);}}
+if(fields.sensor!==undefined){sensorEnabled=fields.sensor==="ON"||fields.sensor==="1"||fields.sensor==="true";sensorStateTag.textContent=sensorEnabled?"ON":"OFF";sensorToggle.textContent=sensorEnabled?"Disable sensor":"Enable sensor";}
+if(fields.buzzer!==undefined){buzzerEnabled=fields.buzzer==="ON"||fields.buzzer==="1"||fields.buzzer==="true";buzzerStateTag.textContent=buzzerEnabled?"ON":"OFF";buzzerToggle.textContent=buzzerEnabled?"Disable buzzer":"Enable buzzer";}
+if(fields.obstacle!==undefined){const state=fields.obstacle.toUpperCase();warningIndicator.classList.toggle("warning",state==="NEAR"||state==="CAUTION");warningIndicator.classList.toggle("danger",state==="STOP"||state==="DANGER");warningText.textContent=state==="CLEAR"?"Path clear":state==="NEAR"||state==="CAUTION"?"Obstacle getting close":state==="STOP"||state==="DANGER"?"Obstacle detected — forward stopped":state;}
+if(lastDistance!==null&&fields.sensor!=="OFF"&&fields.sensor!=="0"){obstacleStatus.textContent="Latest measured distance: "+lastDistance.toFixed(1)+" cm";}}
+function handleNotification(event){const value=new TextDecoder().decode(event.target.value).trim();if(!value)return;vehicleResponse.textContent=value;log("RX  "+value);
+// Expected firmware telemetry: DISTANCE:34.5;SENSOR:ON;BUZZER:ON;OBSTACLE:NEAR
+if(value.includes("DISTANCE:")||value.includes("SENSOR:")||value.includes("BUZZER:")||value.includes("OBSTACLE:")){const fields={};for(const part of value.split(/[;\\s]+/)){const i=part.indexOf(":");if(i>0)fields[part.slice(0,i).toLowerCase()]=part.slice(i+1);}updateTelemetry(fields);}
+}
+async function connect(){if(!navigator.bluetooth){log("Web Bluetooth unavailable. Use Chrome or Edge on desktop/Android over HTTPS.");connectionStatus.textContent="Browser does not support Web Bluetooth";return;}try{connectButton.disabled=true;connectionStatus.textContent="Choose DualMotorV2…";device=await navigator.bluetooth.requestDevice({filters:[{name:"DualMotorV2"}],optionalServices:[SERVICE_UUID]});deviceName.textContent=device.name||"DualMotorV2";device.addEventListener("gattserverdisconnected",()=>{setConnected(false);log("BLE disconnected. Firmware should stop both motor outputs.");});const server=await device.gatt.connect();const service=await server.getPrimaryService(SERVICE_UUID);rxCharacteristic=await service.getCharacteristic(RX_UUID);txCharacteristic=await service.getCharacteristic(TX_UUID);await txCharacteristic.startNotifications();txCharacteristic.addEventListener("characteristicvaluechanged",handleNotification);setConnected(true);log("Connected to "+(device.name||"DualMotorV2"));vehicleResponse.textContent="Connected — waiting for sensor telemetry";}catch(error){setConnected(false);connectButton.disabled=false;log(error.name==="NotFoundError"?"No device selected.":"Connection error: "+error.message);connectionStatus.textContent="Connection failed";}}
 function disconnect(){if(device?.gatt?.connected)device.gatt.disconnect();setConnected(false);log("Disconnected from car.");}
 connectButton.addEventListener("click",connect);disconnectButton.addEventListener("click",disconnect);
 document.querySelectorAll("[data-command]").forEach(button=>button.addEventListener("click",()=>sendCommand(button.dataset.command)));
-
+sensorToggle.addEventListener("click",()=>sendCommand(sensorEnabled===true?"sensor_off":"sensor_on"));
+buzzerToggle.addEventListener("click",()=>sendCommand(buzzerEnabled===true?"buzzer_off":"buzzer_on"));
 function isTypingTarget(target){return target instanceof HTMLElement && (target.isContentEditable || ["INPUT","TEXTAREA","SELECT"].includes(target.tagName));}
-document.addEventListener("keydown",event=>{
-  const key=event.key.toLowerCase();
-  const command=keyboardCommands[key];
-  if(!command || isTypingTarget(event.target)) return;
-  event.preventDefault();
-  if(event.repeat || pressedKeys.has(key)) return;
-  pressedKeys.add(key);
-  sendCommand(command);
-});
-document.addEventListener("keyup",event=>{
-  const key=event.key.toLowerCase();
-  if(!keyboardCommands[key]) return;
-  pressedKeys.delete(key);
-  if((key==="w" || key==="s") && !pressedKeys.has("w") && !pressedKeys.has("s")){
-    sendCommand("stop");
-  }
-});
-window.addEventListener("blur",()=>{
-  const wasDriving=pressedKeys.size>0;
-  pressedKeys.clear();
-  if(wasDriving) sendCommand("stop");
-});
-
+document.addEventListener("keydown",event=>{const key=event.key.toLowerCase();const command=keyboardCommands[key];if(!command||isTypingTarget(event.target))return;event.preventDefault();if(event.repeat||pressedKeys.has(key))return;pressedKeys.add(key);sendCommand(command);});
+document.addEventListener("keyup",event=>{const key=event.key.toLowerCase();if(!keyboardCommands[key])return;pressedKeys.delete(key);if((key==="w"||key==="s")&&!pressedKeys.has("w")&&!pressedKeys.has("s"))sendCommand("stop");});
+window.addEventListener("blur",()=>{const wasDriving=pressedKeys.size>0;pressedKeys.clear();if(wasDriving)sendCommand("stop");});
 speedSlider.addEventListener("input",()=>speedValue.textContent=speedSlider.value);
 speedSlider.addEventListener("change",()=>sendCommand("speed_"+Number(speedSlider.value)));
 $("#clearLog").addEventListener("click",()=>activityLog.innerHTML='<p class="log-empty">Activity cleared.</p>');
