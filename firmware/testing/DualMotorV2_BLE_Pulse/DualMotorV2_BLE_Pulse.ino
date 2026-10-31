@@ -1,10 +1,11 @@
 /*
- Dual Motor V2 - PULSE-STEERING BLE TEST firmware, recorded October 17, 2026.
- Revision: latched drive, reversed drive polarity, bounded steering pulses.
- This is TEST code, not a validated production controller.
+ Dual Motor V2 - BLE + HC-SR04 obstacle-stop TEST firmware.
+ Revision: latched drive, bounded steering pulses, front distance sensing.
  Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x.
- GPIO25->L293D1, GPIO26->2, GPIO27->7;
- GPIO14->9, GPIO32->10, GPIO33->15.
+ Motor GPIO25->L293D1, GPIO26->2, GPIO27->7;
+ GPIO14->L293D9, GPIO32->10, GPIO33->15.
+ HC-SR04 TRIG->GPIO18; ECHO->GPIO19 through a 1k/2k voltage divider.
+ This is TEST code, not a validated production controller.
  Pin8 motor +6 V, pin16 logic +5 V; all grounds 4/5/12/13 shared.
  Drive motor3/6; steering11/14.
  TWO separate 10k pull-downs: pin1->GND and pin9->GND.
@@ -25,7 +26,11 @@
  Same-side repeated packets do not extend/retrigger a pulse until opposite or stop.
  No guarantee the wheels hold angle after steering power is removed.
  Continuous noise reduction reported at 150 ms; 200 ms travel/current results pending.
- No ultrasonic/GPS/lights/autonomous functions in this test sketch.
+ HC-SR04 readings are reported over USB Serial; forward drive is blocked
+ when the sensor reports <=20 cm, has no valid echo, or its reading is stale.
+ Reverse and steering remain available. Clearing an obstacle does NOT restart
+ the car; send a new forward command. This is not a certified safety system.
+ No GPS, lights, or autonomous navigation functions are included.
 */
 
 #include <Arduino.h>
@@ -97,6 +102,26 @@ constexpr uint8_t STEER_EN=14, STEER_A=32, STEER_B=33;
 constexpr uint32_t REVERSE_DELAY_MS=50;
 constexpr uint32_t STEER_PULSE_MS=200; // Test 3: combined bench-source and longer steering pulse.
 constexpr uint32_t STEER_DUTY=128; // Preserve previous ~50% steering PWM.
+
+// HC-SR04 front sensor. GPIO19 MUST receive a level-shifted <=3.3 V Echo.
+constexpr uint8_t ULTRASONIC_TRIG_PIN=18;
+constexpr uint8_t ULTRASONIC_ECHO_PIN=19;
+constexpr float OBSTACLE_STOP_CM=20.0f;
+constexpr uint32_t ULTRASONIC_INTERVAL_MS=70;
+constexpr uint32_t ULTRASONIC_TIMEOUT_US=30000;
+constexpr uint32_t ULTRASONIC_STALE_MS=250;
+volatile bool ultrasonicEchoArmed=false;
+volatile bool ultrasonicEchoReady=false;
+volatile uint32_t ultrasonicEchoRiseUs=0;
+volatile uint32_t ultrasonicEchoPulseUs=0;
+bool ultrasonicWaiting=false;
+bool ultrasonicReadingValid=false;
+bool ultrasonicObstacleDetected=false;
+float ultrasonicDistanceCm=-1.0f;
+uint32_t ultrasonicLastTriggerMs=0;
+uint32_t ultrasonicTriggerStartUs=0;
+uint32_t ultrasonicLastValidMs=0;
+
 constexpr char SERVICE[]="6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr char RX_UUID[]="6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr char TX_UUID[]="6e400003-b5a3-f393-e0a9-e50e24dcca9e";
@@ -168,6 +193,12 @@ class Receiver : public BLECharacteristicCallbacks {
   }
 };
 
+bool ultrasonicAllowsForward() {
+  return ultrasonicReadingValid &&
+         (millis()-ultrasonicLastValidMs)<=ULTRASONIC_STALE_MS &&
+         !ultrasonicObstacleDetected;
+}
+
 void handle(Command c) {
   if (c.action==INVALID || c.action==STOP) {
     stopAll(); report(c.action==STOP ? "stopped" : "unknown command: stopped"); return;
@@ -179,13 +210,20 @@ void handle(Command c) {
     return;
   }
   if (c.action==FORWARD || c.action==BACK) {
+    if (c.action==FORWARD && !ultrasonicAllowsForward()) {
+      stopDrive();
+      report(ultrasonicObstacleDetected
+        ? "forward blocked: obstacle within 20 cm"
+        : "forward blocked: ultrasonic reading unavailable or stale");
+      return;
+    }
     driveRequested=speedPercent>0 ? (c.action==FORWARD ? -1 : 1) : 0;
     report(c.action==FORWARD ? "forward" : "back");
     return;
   }
   if (speedPercent==0) return;
   int direction=c.action==LEFT ? 1 : -1;
-  if (direction==lastSteerCommand) return; // No repeat or pulse extension.
+  if (direction==lastSteerCommand) return;
   stopSteering();
   lastSteerCommand=direction;
   steerRequested=direction;
@@ -222,7 +260,100 @@ void updateMotors(uint32_t now) {
     }
 }
 
+void IRAM_ATTR ultrasonicEchoISR() {
+  if (!ultrasonicEchoArmed) return;
+  if (digitalRead(ULTRASONIC_ECHO_PIN)==HIGH) {
+    ultrasonicEchoRiseUs=micros();
+  } else if (ultrasonicEchoRiseUs!=0) {
+    ultrasonicEchoPulseUs=micros()-ultrasonicEchoRiseUs;
+    ultrasonicEchoReady=true;
+    ultrasonicEchoArmed=false;
+    ultrasonicEchoRiseUs=0;
+  }
+}
+
+void updateUltrasonic(uint32_t nowMs) {
+  bool ready=false;
+  uint32_t pulseWidthUs=0;
+  noInterrupts();
+  if (ultrasonicEchoReady) {
+    ready=true;
+    pulseWidthUs=ultrasonicEchoPulseUs;
+    ultrasonicEchoReady=false;
+  }
+  interrupts();
+
+  if (ready) {
+    ultrasonicWaiting=false;
+    if (pulseWidthUs>0 && pulseWidthUs<=24000) {
+      ultrasonicDistanceCm=(pulseWidthUs*0.0343f)/2.0f;
+      ultrasonicReadingValid=true;
+      ultrasonicLastValidMs=nowMs;
+      ultrasonicObstacleDetected=(ultrasonicDistanceCm<=OBSTACLE_STOP_CM);
+      if (ultrasonicObstacleDetected && driveRequested==-1) {
+        stopDrive();
+        report("OBSTACLE: forward drive stopped");
+      }
+    } else {
+      ultrasonicReadingValid=false;
+      ultrasonicObstacleDetected=false;
+      if (driveRequested==-1) {
+        stopDrive();
+        report("ultrasonic invalid reading: forward stopped");
+      }
+    }
+  }
+
+  if (ultrasonicWaiting &&
+      uint32_t(micros()-ultrasonicTriggerStartUs)>=ULTRASONIC_TIMEOUT_US) {
+    noInterrupts();
+    ultrasonicEchoArmed=false;
+    ultrasonicEchoRiseUs=0;
+    interrupts();
+    ultrasonicWaiting=false;
+    ultrasonicReadingValid=false;
+    ultrasonicObstacleDetected=false;
+    if (driveRequested==-1) {
+      stopDrive();
+      report("ultrasonic timeout: forward stopped");
+    }
+  }
+
+  if (!ultrasonicWaiting &&
+      uint32_t(nowMs-ultrasonicLastTriggerMs)>=ULTRASONIC_INTERVAL_MS) {
+    noInterrupts();
+    ultrasonicEchoReady=false;
+    ultrasonicEchoRiseUs=0;
+    ultrasonicEchoArmed=true;
+    interrupts();
+    ultrasonicWaiting=true;
+    ultrasonicTriggerStartUs=micros();
+    ultrasonicLastTriggerMs=nowMs;
+    digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
+    delayMicroseconds(2);
+    digitalWrite(ULTRASONIC_TRIG_PIN,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
+  }
+
+  if (ultrasonicReadingValid &&
+      uint32_t(nowMs-ultrasonicLastValidMs)>ULTRASONIC_STALE_MS) {
+    ultrasonicReadingValid=false;
+    if (driveRequested==-1) {
+      stopDrive();
+      report("ultrasonic reading stale: forward stopped");
+    }
+  }
+}
+
 void setup() {
+  pinMode(ULTRASONIC_TRIG_PIN,OUTPUT);
+  digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
+  pinMode(ULTRASONIC_ECHO_PIN,INPUT);
+  attachInterrupt(digitalPinToInterrupt(ULTRASONIC_ECHO_PIN),
+                  ultrasonicEchoISR,CHANGE);
+  ultrasonicLastTriggerMs=millis()-ULTRASONIC_INTERVAL_MS;
+
   for (uint8_t pin : {DRIVE_EN,DRIVE_A,DRIVE_B,STEER_EN,STEER_A,STEER_B}) {
     digitalWrite(pin,LOW); pinMode(pin,OUTPUT);
   }
@@ -251,8 +382,9 @@ void setup() {
   service->start();
   BLEAdvertising *ad=BLEDevice::getAdvertising();
   ad->addServiceUUID(SERVICE); ad->setScanResponse(true); ad->start();
-  Serial.println("BLE + USB Serial ready. 115200 baud, Newline. Type help. Motors stopped.");
-  Serial.println("Logs are commanded GPIO/PWM states; no voltage/current/position sensors.");
+  Serial.println("BLE + USB Serial + HC-SR04 ready. 115200 baud, Newline. Motors stopped.");
+  Serial.println("HC-SR04: TRIG GPIO18, ECHO GPIO19 via 1k/2k divider; stop threshold 20 cm.");
+  Serial.println("Forward requires a fresh valid distance reading; reverse remains available.");
 }
 
 
@@ -275,9 +407,16 @@ void printStatus(uint32_t now) {
     (unsigned long)now,sourceName(),speedPercent,driveApplied,
     (unsigned long)ledcRead(DRIVE_EN),steerApplied,
     (unsigned long)ledcRead(STEER_EN),(unsigned long)remaining);
-  Serial.printf("pins D[%d,%d] S[%d,%d]; configured pulse=%lu ms; COMMANDS, not sensor readings\n",
+  Serial.printf("pins D[%d,%d] S[%d,%d]; configured pulse=%lu ms\n",
     digitalRead(DRIVE_A),digitalRead(DRIVE_B),
     digitalRead(STEER_A),digitalRead(STEER_B),(unsigned long)STEER_PULSE_MS);
+  if (ultrasonicReadingValid) {
+    Serial.printf("ultrasonic=%.1f cm obstacle=%s forward=%s\n",
+      ultrasonicDistanceCm, ultrasonicObstacleDetected ? "YES" : "NO",
+      ultrasonicAllowsForward() ? "ALLOWED" : "BLOCKED");
+  } else {
+    Serial.println("ultrasonic=NO VALID READING; forward=BLOCKED");
+  }
 }
 
 void dispatchCommand(const std::string &line, uint8_t source) {
@@ -293,6 +432,7 @@ void processSerialLine(const std::string &line) {
   if (line=="status") { printStatus(millis()); return; }
   if (line=="help") {
     Serial.println("forward back left right speed_0..speed_100 stop status telemetry_on telemetry_off");
+    Serial.println("Forward is blocked unless HC-SR04 has a fresh reading above 20 cm.");
     return;
   }
   if (line=="telemetry_on" || line=="telemetry_off") {
@@ -359,6 +499,8 @@ void loop() {
     dispatchCommand(p.text,BLE_SOURCE);
   }
   pollSerial();
+  now=millis();
+  updateUltrasonic(now);
   now=millis();
   if (generation.load()!=seenGeneration ||
       (activeSource==BLE_SOURCE && !connected.load())) {
