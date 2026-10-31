@@ -42,3 +42,19 @@ The UI sends one command per click. It does not repeatedly transmit while a butt
 - index.html — control layout
 - style.css — responsive styling
 - app.js — Web Bluetooth connection and command handling
+
+
+## Ultrasonic and buzzer UI (new protocol)
+
+The interface now includes an HC-SR04 distance readout, sensor enable/disable control, active-buzzer enable/disable control, and a warning-state indicator. It sends these additional commands:
+
+- `sensor_on` / `sensor_off`
+- `buzzer_on` / `buzzer_off`
+
+It expects telemetry notifications in this format (one line per update):
+
+`DISTANCE:34.5;SENSOR:ON;BUZZER:ON;OBSTACLE:NEAR`
+
+Supported obstacle states are `CLEAR`, `NEAR`, and `STOP`.
+
+**Firmware dependency:** the current firmware revision in this repository does not yet implement these four commands or BLE distance telemetry. The new controls are therefore an interface update only until matching firmware support is committed and flashed to the ESP32. Do not assume the sensor or buzzer is controllable from the page until that firmware update is installed. The existing drive commands and speed control are preserved.
