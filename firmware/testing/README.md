@@ -1,10 +1,10 @@
 # BLE motor-control TEST firmware
 
-## Current: pulse steering, latched drive — October 17, 2026
+## Current: BLE motor control + HC-SR04 obstacle interlock
 
-Use [DualMotorV2_BLE_Pulse.ino](DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). This revision implements bounded steering pulses and reverses drive polarity to match the user's reported swapped motor wires. It is test firmware, not a validated complete vehicle controller.
+Use [DualMotorV2_BLE_Pulse.ino](DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino). The current test sketch preserves latched forward/back drive and bounded 200 ms steering pulses, and adds HC-SR04 front distance sensing. A fresh valid reading above 20 cm is required for forward drive; a close obstacle or missing/stale reading blocks forward. Reverse and steering remain available. It is test firmware, not a validated complete vehicle controller.
 
-Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No extra Arduino libraries. BLE name remains `DualMotorV2`; Serial Monitor 115200.
+Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No extra Arduino libraries. BLE name remains `DualMotorV2`; Serial Monitor 115200. HC-SR04 wiring and first bring-up steps are in [HC-SR04 integration](HC_SR04_INTEGRATION.md).
 
 | Command | Current behavior |
 |---|---|
@@ -18,6 +18,15 @@ Original ESP32-WROOM-32D, Arduino-ESP32 core 3.x. No extra Arduino libraries. BL
 Initial drive setting remains100%, with both motors stopped at startup. Drive stays latched with no command timeout. Steering PWM remains128/255 (about50%), and both channels remain1 kHz: no voltage, steering-duty, or frequency increase is included.
 
 The 200 ms limit starts when steering is actually energized, after the short command-transition delay. It is an uncalibrated candidate selected for the combined Test 3 comparison, not proof of full wheel travel. Same-side repeat messages are ignored during and after the pulse, so a held/repeated button cannot continuously extend steering. Send the opposite direction or `stop` before requesting a new same-side pulse. Forward/back and speed changes do not re-arm completed steering. Stop/disconnect clears all motion.
+
+## HC-SR04 obstacle interlock
+
+- TRIG GPIO18; ECHO GPIO19 through a 1 kΩ series / 2 kΩ to-ground divider. The HC-SR04 Echo output is 5 V; direct connection to ESP32 GPIO is not allowed.
+- Sensor VCC uses regulated 5 V and GND shares SYSTEM_GND with the ESP32.
+- The firmware measures approximately every 70 ms, uses a 20 cm threshold, and treats invalid or stale readings as unsafe for forward motion.
+- An obstacle stops an active forward command. Clearing the obstacle does not restart the car; send a new `forward` command.
+- Reverse and steering remain available. This is a preliminary interlock, not a certified safety system or guaranteed stopping-distance calculation.
+- The firmware reports distance in USB Serial. BLE/website sensor telemetry is not yet implemented.
 
 ## Position is not held electrically
 
@@ -55,14 +64,14 @@ Steering stall is the user's plausible explanation for noise/shared-load slowdow
 
 ## Verification
 
-Host tests extract the actual parser/control functions and mock GPIO/PWM. They check reversed drive polarity, latched drive during steering, pulse duration, same-side-repeat suppression, opposite re-arm, stop cancellation, speed0, and unsigned timer rollover.
+Host tests extract the actual parser/control functions and mock GPIO/PWM. They check reversed drive polarity, latched drive during steering, pulse duration, same-side-repeat suppression, opposite re-arm, stop cancellation, speed0, unsigned timer rollover, and the forward interlock for invalid readings/close obstacles. These tests do not compile the ESP32-specific sensor interrupt implementation.
 
 Run from repository root:
 ```bash
 python3 tests/test_ble_pulse.py firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2_BLE_Pulse.ino
 ```
 
-Requires Python3 and g++. Tests passed in the assistant environment. No actual ESP32-core compilation, BLE radio test, motor-power measurement, steering-angle validation, or independent confirmation of user-reported noise reduction was performed.
+Requires Python3 and g++. Tests passed in the assistant environment. No actual ESP32-core compilation, physical HC-SR04 test, BLE radio test, motor-power measurement, steering-angle validation, or independent confirmation of user-reported noise reduction has been performed.
 
 ## Current three-test plan
 
