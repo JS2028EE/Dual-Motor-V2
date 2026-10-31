@@ -102,7 +102,7 @@ These branches are in parallel across the appropriate rail and SYSTEM_GND.
 
 | Component | Proposed supply | Decision still needed |
 |---|---|---|
-| HC-SR04, if confirmed | ELEC_5V and SYSTEM_GND | Echo level protection belongs in the later signal plan |
+| HC-SR04 | ELEC_5V and SYSTEM_GND | Current test firmware: TRIG GPIO18; ECHO GPIO19 through 1 kΩ series / 2 kΩ to GND divider; see [HC-SR04 integration](../../firmware/testing/HC_SR04_INTEGRATION.md) |
 | GPS breakout | ELEC_5V or ELEC_3V3, per actual breakout | Identify model and regulator before wiring |
 | Two white headlights | ELEC_5V through separate LED resistors and a transistor switch | LED current, resistor values, transistor details |
 | Buzzer | Appropriate verified rail through suitable driver | Identify active/passive type and rated voltage/current |
