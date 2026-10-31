@@ -16,7 +16,11 @@ stubs = r'''
 constexpr int DRIVE_EN=25,DRIVE_A=26,DRIVE_B=27,STEER_EN=14,STEER_A=32,STEER_B=33;
 constexpr int LOW=0,HIGH=1;
 constexpr uint32_t REVERSE_DELAY_MS=50,STEER_PULSE_MS=PULSE_VALUE,STEER_DUTY=128;
+constexpr uint32_t ULTRASONIC_STALE_MS=250;
 int speedPercent=100,driveRequested=0,driveApplied=0,steerRequested=0,steerApplied=0,lastSteerCommand=0;
+bool ultrasonicReadingValid=true,ultrasonicObstacleDetected=false;
+uint32_t ultrasonicLastValidMs=0,fakeMillis=0;
+uint32_t millis(){return fakeMillis;}
 uint32_t driveReadyAt=0,steerReadyAt=0,steerStartedAt=0;
 bool steerPulseActive=false;
 std::map<int,int> pwm,pins;
@@ -31,6 +35,11 @@ tests = r'''
 int main(){
  assert(parseCommand("speed_30").speed==30);
  for(auto s:{"speed_101","speed_-1","speed_30.0","speed_nan"})assert(parseCommand(s).action==INVALID);
+ // Sensor interlock: invalid readings and close obstacles reject forward.
+ ultrasonicReadingValid=false;handle(parseCommand("forward"));assert(driveRequested==0);
+ ultrasonicReadingValid=true;ultrasonicObstacleDetected=true;
+ handle(parseCommand("forward"));assert(driveRequested==0);
+ ultrasonicObstacleDetected=false;
  handle(parseCommand("forward"));updateMotors(0);assert(pwm[DRIVE_EN]==0);
  updateMotors(50);assert(pwm[DRIVE_EN]==255 && pins[DRIVE_A]==LOW && pins[DRIVE_B]==HIGH);
  handle(parseCommand("left"));updateMotors(50);assert(pwm[STEER_EN]==0);
