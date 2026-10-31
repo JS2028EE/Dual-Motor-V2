@@ -14,7 +14,8 @@ Current [motor test firmware](firmware/testing/DualMotorV2_BLE_Pulse/DualMotorV2
 - One 200 ms left/right steering pulse at approximately 50% PWM duty, then steering off.
 - Integer speed_0 through speed_100; startup setting 100 with motors stopped.
 - stop for both motors; BLE link-change stops and input-error handling.
-- Command-state logs, not sensor measurements.
+- HC-SR04 front distance readings over USB Serial, with a preliminary 20 cm forward obstacle interlock; reverse and steering remain available.
+- Command-state and ultrasonic distance logs; no motor voltage/current, wheel speed, or steering-angle measurements.
 
 Same-side steering repeats are ignored until opposite or stop. USB unplug is not a detected stop; no drive watchdog exists yet. Earlier motor test sketches remain for reproducing the investigation.
 
@@ -26,13 +27,13 @@ Same-side steering repeats are ignored until opposite or stop. USB unplug is not
 | USB Serial commands and logs | Implemented testing interface |
 | Wi-Fi vehicle link | Selected transport; implementation and validation pending |
 | App with simultaneous driving/steering | Planned |
-| Sensor readings and status | Planned; sensor integration pending |
+| HC-SR04 front distance sensing and forward obstacle interlock | Implemented in test firmware; physical validation pending |
 | GPS location and map/navigation | Planned |
 | Waypoints and automated movement | Planned; localization, feedback and stopping checks required |
 | Speed and distance traveled | Planned; measurement method/calibration pending |
 | Buzzer, front ultrasonic sensor, white headlights | Planned |
 
-The app should display actual measurements with freshness/validity status, distinguish manual and automatic modes, and provide an accessible stop. Navigation goals go to the vehicle; local control and obstacle/stop decisions must not depend on the app staying connected. See [app plan](documentation/ui/APP_PLAN.md) and [wireless plan](documentation/network/WIRELESS_LINK.md).
+The app should display actual measurements with freshness/validity status, distinguish manual and automatic modes, and provide an accessible stop. HC-SR04 distance is currently logged over USB Serial only; BLE and website sensor telemetry remain planned. Navigation goals go to the vehicle; local control and obstacle/stop decisions must not depend on the app staying connected. See [app plan](documentation/ui/APP_PLAN.md) and [wireless plan](documentation/network/WIRELESS_LINK.md).
 
 ## Hardware and power
 
@@ -62,6 +63,7 @@ The bench success does not resolve earlier unintended motor power with its suppl
 | Motor noise/load investigation | [Investigation](documentation/testing/MOTOR_NOISE_AND_LOAD.md) |
 | Reasoning and engineering reflection | [Reflection](documentation/testing/STEERING_REFLECTION.md) |
 | Firmware and commands | [Testing guide](firmware/testing/README.md) |
+| HC-SR04 wiring and bring-up | [Sensor integration guide](firmware/testing/HC_SR04_INTEGRATION.md) |
 | Serial logs | [Serial guide](documentation/testing/SERIAL_CONTROL.md) |
 | MATLAB/Octave assumptions and examples | [Simulations](simulations/README.md) |
 | Remaining work | [Progress](progress/PROGRESS.md) |
