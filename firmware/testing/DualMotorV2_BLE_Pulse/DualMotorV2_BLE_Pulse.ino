@@ -47,7 +47,7 @@
 #include <initializer_list>
 
 // BEGIN COMMAND PARSER (host-tested independently)
-enum Action { INVALID, FORWARD, BACK, LEFT, RIGHT, STOP, SPEED };
+enum Action { INVALID, FORWARD, BACK, LEFT, RIGHT, STOP, SPEED, SENSOR_ON, SENSOR_OFF, BUZZER_ON, BUZZER_OFF };
 struct Command { Action action; int speed; };
 std::string trimmed(std::string s);
 Command parseCommand(std::string s);
@@ -84,6 +84,10 @@ Command parseCommand(std::string s) {
     return {SPEED, n};
   }
   if (key == "command") { key = value; value = ""; }
+  if (key == "sensor" && value == "on") return {SENSOR_ON,0};
+  if (key == "sensor" && value == "off") return {SENSOR_OFF,0};
+  if (key == "buzzer" && value == "on") return {BUZZER_ON,0};
+  if (key == "buzzer" && value == "off") return {BUZZER_OFF,0};
   Action a = INVALID;
   if (key == "forward") a = FORWARD;
   else if (key == "back") a = BACK;
@@ -106,6 +110,9 @@ constexpr uint32_t STEER_DUTY=128; // Preserve previous ~50% steering PWM.
 // HC-SR04 front sensor. GPIO19 MUST receive a level-shifted <=3.3 V Echo.
 constexpr uint8_t ULTRASONIC_TRIG_PIN=18;
 constexpr uint8_t ULTRASONIC_ECHO_PIN=19;
+// Active 5 V buzzer is switched through an NPN transistor on GPIO23.
+// Do not connect an unknown/high-current buzzer directly to an ESP32 pin.
+constexpr uint8_t BUZZER_PIN=23;
 constexpr float OBSTACLE_STOP_CM=20.0f;
 constexpr uint32_t ULTRASONIC_INTERVAL_MS=70;
 constexpr uint32_t ULTRASONIC_TIMEOUT_US=30000;
@@ -114,6 +121,10 @@ volatile bool ultrasonicEchoArmed=false;
 volatile bool ultrasonicEchoReady=false;
 volatile uint32_t ultrasonicEchoRiseUs=0;
 volatile uint32_t ultrasonicEchoPulseUs=0;
+volatile bool sensorEnabled=true; // Default ON at every boot; invalid readings still block forward drive.
+bool buzzerEnabled=true;          // Default ON; audible output follows distance bands.
+bool buzzerOutputOn=false;
+uint32_t buzzerCycleStartedMs=0;
 bool ultrasonicWaiting=false;
 bool ultrasonicReadingValid=false;
 bool ultrasonicObstacleDetected=false;
@@ -160,6 +171,55 @@ void report(const char *s) {
   }
 }
 
+void setBuzzerOutput(bool on) {
+  buzzerOutputOn=on;
+  digitalWrite(BUZZER_PIN,on ? HIGH : LOW);
+}
+
+void updateBuzzer(uint32_t nowMs) {
+  if (!sensorEnabled || !buzzerEnabled || !ultrasonicReadingValid ||
+      uint32_t(nowMs-ultrasonicLastValidMs)>ULTRASONIC_STALE_MS) {
+    setBuzzerOutput(false);
+    return;
+  }
+  const float cm=ultrasonicDistanceCm;
+  if (cm>100.0f) { setBuzzerOutput(false); return; }
+  if (cm<=OBSTACLE_STOP_CM) { setBuzzerOutput(true); return; }
+
+  uint32_t periodMs=800, onMs=100;
+  if (cm<=40.0f) { periodMs=180; onMs=90; }
+  else if (cm<=60.0f) { periodMs=400; onMs=100; }
+  if (uint32_t(nowMs-buzzerCycleStartedMs)>=periodMs) buzzerCycleStartedMs=nowMs;
+  setBuzzerOutput(uint32_t(nowMs-buzzerCycleStartedMs)<onMs);
+}
+
+void notifyTelemetryField(const char *field) {
+  if (!connected.load() || !statusChar) return;
+  statusChar->setValue(field);
+  statusChar->notify();
+}
+
+void sendTelemetry(uint32_t nowMs) {
+  static uint32_t lastTelemetryMs=0;
+  if (!connected.load() || uint32_t(nowMs-lastTelemetryMs)<250) return;
+  lastTelemetryMs=nowMs;
+  char distanceField[16];
+  if (sensorEnabled && ultrasonicReadingValid &&
+      uint32_t(nowMs-ultrasonicLastValidMs)<=ULTRASONIC_STALE_MS) {
+    snprintf(distanceField,sizeof(distanceField),"D:%.1f",ultrasonicDistanceCm);
+  } else {
+    snprintf(distanceField,sizeof(distanceField),"D:--");
+  }
+  notifyTelemetryField(distanceField);
+  notifyTelemetryField(sensorEnabled ? "S:1" : "S:0");
+  notifyTelemetryField(buzzerEnabled ? "B:1" : "B:0");
+  const char *obstacleState=!sensorEnabled ? "O:OFF" :
+      !ultrasonicReadingValid ? "O:WAIT" :
+      ultrasonicObstacleDetected ? "O:STOP" :
+      ultrasonicDistanceCm<=60.0f ? "O:NEAR" : "O:CLEAR";
+  notifyTelemetryField(obstacleState);
+}
+
 class ServerEvents : public BLEServerCallbacks {
   void onConnect(BLEServer *) override {
     generation.fetch_add(1); connected.store(true);
@@ -200,6 +260,37 @@ bool ultrasonicAllowsForward() {
 }
 
 void handle(Command c) {
+  if (c.action==SENSOR_ON) {
+    sensorEnabled=true;
+    ultrasonicReadingValid=false;
+    ultrasonicObstacleDetected=false;
+    ultrasonicLastTriggerMs=millis()-ULTRASONIC_INTERVAL_MS;
+    report("sensor enabled: checking HC-SR04");
+    return;
+  }
+  if (c.action==SENSOR_OFF) {
+    sensorEnabled=false;
+    ultrasonicReadingValid=false;
+    ultrasonicObstacleDetected=false;
+    ultrasonicWaiting=false;
+    noInterrupts(); ultrasonicEchoArmed=false; ultrasonicEchoReady=false; ultrasonicEchoRiseUs=0; interrupts();
+    stopDrive();
+    setBuzzerOutput(false);
+    report("sensor disabled: forward drive blocked");
+    return;
+  }
+  if (c.action==BUZZER_ON) {
+    buzzerEnabled=true;
+    buzzerCycleStartedMs=millis();
+    report("buzzer enabled");
+    return;
+  }
+  if (c.action==BUZZER_OFF) {
+    buzzerEnabled=false;
+    setBuzzerOutput(false);
+    report("buzzer disabled; obstacle stop remains active");
+    return;
+  }
   if (c.action==INVALID || c.action==STOP) {
     stopAll(); report(c.action==STOP ? "stopped" : "unknown command: stopped"); return;
   }
@@ -264,6 +355,8 @@ void ultrasonicEchoISR();
 void updateUltrasonic(uint32_t nowMs);
 
 void setup() {
+  pinMode(BUZZER_PIN,OUTPUT);
+  digitalWrite(BUZZER_PIN,LOW);
   pinMode(ULTRASONIC_TRIG_PIN,OUTPUT);
   digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
   pinMode(ULTRASONIC_ECHO_PIN,INPUT);
@@ -302,6 +395,8 @@ void setup() {
   Serial.println("BLE + USB Serial + HC-SR04 ready. 115200 baud, Newline. Motors stopped.");
   Serial.println("HC-SR04: TRIG GPIO18, ECHO GPIO19 via 1k/2k divider; stop threshold 20 cm.");
   Serial.println("Forward requires a fresh valid distance reading; reverse remains available.");
+  Serial.println("Startup self-check: HC-SR04 ENABLED; active buzzer ENABLED; motors STOPPED.");
+  Serial.println("Buzzer driver: GPIO23 -> 1k -> NPN base; emitter GND; collector buzzer-; buzzer+ regulated 5V.");
 }
 
 void IRAM_ATTR ultrasonicEchoISR() {
@@ -317,6 +412,12 @@ void IRAM_ATTR ultrasonicEchoISR() {
 }
 
 void updateUltrasonic(uint32_t nowMs) {
+  if (!sensorEnabled) {
+    ultrasonicWaiting=false;
+    ultrasonicReadingValid=false;
+    ultrasonicObstacleDetected=false;
+    return;
+  }
   bool ready=false;
   uint32_t pulseWidthUs=0;
   noInterrupts();
@@ -435,8 +536,8 @@ void dispatchCommand(const std::string &line, uint8_t source) {
 void processSerialLine(const std::string &line) {
   if (line=="status") { printStatus(millis()); return; }
   if (line=="help") {
-    Serial.println("forward back left right speed_0..speed_100 stop status telemetry_on telemetry_off");
-    Serial.println("Forward is blocked unless HC-SR04 has a fresh reading above 20 cm.");
+    Serial.println("forward back left right speed_0..speed_100 stop sensor_on sensor_off buzzer_on buzzer_off status telemetry_on telemetry_off");
+    Serial.println("Sensor and buzzer default ON. Forward is blocked unless HC-SR04 has a fresh reading above 20 cm.");
     return;
   }
   if (line=="telemetry_on" || line=="telemetry_off") {
@@ -505,6 +606,9 @@ void loop() {
   pollSerial();
   now=millis();
   updateUltrasonic(now);
+  now=millis();
+  updateBuzzer(now);
+  sendTelemetry(now);
   now=millis();
   if (generation.load()!=seenGeneration ||
       (activeSource==BLE_SOURCE && !connected.load())) {
