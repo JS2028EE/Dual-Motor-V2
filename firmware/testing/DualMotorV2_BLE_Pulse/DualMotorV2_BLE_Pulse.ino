@@ -260,6 +260,50 @@ void updateMotors(uint32_t now) {
     }
 }
 
+void ultrasonicEchoISR();
+void updateUltrasonic(uint32_t nowMs);
+
+void setup() {
+  pinMode(ULTRASONIC_TRIG_PIN,OUTPUT);
+  digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
+  pinMode(ULTRASONIC_ECHO_PIN,INPUT);
+  attachInterrupt(digitalPinToInterrupt(ULTRASONIC_ECHO_PIN),
+                  ultrasonicEchoISR,CHANGE);
+  ultrasonicLastTriggerMs=millis()-ULTRASONIC_INTERVAL_MS;
+
+  for (uint8_t pin : {DRIVE_EN,DRIVE_A,DRIVE_B,STEER_EN,STEER_A,STEER_B}) {
+    digitalWrite(pin,LOW); pinMode(pin,OUTPUT);
+  }
+  Serial.begin(115200);
+  bool okDrive=ledcAttach(DRIVE_EN,1000,8);
+  bool okSteer=ledcAttach(STEER_EN,1000,8);
+  if (!okDrive || !okSteer) {
+    digitalWrite(DRIVE_EN,LOW); digitalWrite(STEER_EN,LOW);
+    Serial.println("PWM setup failed; motor power must stay OFF.");
+    while (true) delay(100);
+  }
+  stopAll();
+  commands=xQueueCreate(12,sizeof(Packet));
+  if (!commands) { Serial.println("Queue allocation failed"); while(true) delay(100); }
+  BLEDevice::init("DualMotorV2");
+  BLEServer *server=BLEDevice::createServer();
+  server->setCallbacks(new ServerEvents());
+  BLEService *service=server->createService(SERVICE);
+  statusChar=service->createCharacteristic(TX_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  statusChar->addDescriptor(new BLE2902());
+  statusChar->setValue("ready: speed_100; motors stopped");
+  BLECharacteristic *rx=service->createCharacteristic(RX_UUID,
+      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+  rx->setCallbacks(new Receiver());
+  service->start();
+  BLEAdvertising *ad=BLEDevice::getAdvertising();
+  ad->addServiceUUID(SERVICE); ad->setScanResponse(true); ad->start();
+  Serial.println("BLE + USB Serial + HC-SR04 ready. 115200 baud, Newline. Motors stopped.");
+  Serial.println("HC-SR04: TRIG GPIO18, ECHO GPIO19 via 1k/2k divider; stop threshold 20 cm.");
+  Serial.println("Forward requires a fresh valid distance reading; reverse remains available.");
+}
+
 void IRAM_ATTR ultrasonicEchoISR() {
   if (!ultrasonicEchoArmed) return;
   if (digitalRead(ULTRASONIC_ECHO_PIN)==HIGH) {
@@ -346,46 +390,6 @@ void updateUltrasonic(uint32_t nowMs) {
   }
 }
 
-void setup() {
-  pinMode(ULTRASONIC_TRIG_PIN,OUTPUT);
-  digitalWrite(ULTRASONIC_TRIG_PIN,LOW);
-  pinMode(ULTRASONIC_ECHO_PIN,INPUT);
-  attachInterrupt(digitalPinToInterrupt(ULTRASONIC_ECHO_PIN),
-                  ultrasonicEchoISR,CHANGE);
-  ultrasonicLastTriggerMs=millis()-ULTRASONIC_INTERVAL_MS;
-
-  for (uint8_t pin : {DRIVE_EN,DRIVE_A,DRIVE_B,STEER_EN,STEER_A,STEER_B}) {
-    digitalWrite(pin,LOW); pinMode(pin,OUTPUT);
-  }
-  Serial.begin(115200);
-  bool okDrive=ledcAttach(DRIVE_EN,1000,8);
-  bool okSteer=ledcAttach(STEER_EN,1000,8);
-  if (!okDrive || !okSteer) {
-    digitalWrite(DRIVE_EN,LOW); digitalWrite(STEER_EN,LOW);
-    Serial.println("PWM setup failed; motor power must stay OFF.");
-    while (true) delay(100);
-  }
-  stopAll();
-  commands=xQueueCreate(12,sizeof(Packet));
-  if (!commands) { Serial.println("Queue allocation failed"); while(true) delay(100); }
-  BLEDevice::init("DualMotorV2");
-  BLEServer *server=BLEDevice::createServer();
-  server->setCallbacks(new ServerEvents());
-  BLEService *service=server->createService(SERVICE);
-  statusChar=service->createCharacteristic(TX_UUID,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  statusChar->addDescriptor(new BLE2902());
-  statusChar->setValue("ready: speed_100; motors stopped");
-  BLECharacteristic *rx=service->createCharacteristic(RX_UUID,
-      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
-  rx->setCallbacks(new Receiver());
-  service->start();
-  BLEAdvertising *ad=BLEDevice::getAdvertising();
-  ad->addServiceUUID(SERVICE); ad->setScanResponse(true); ad->start();
-  Serial.println("BLE + USB Serial + HC-SR04 ready. 115200 baud, Newline. Motors stopped.");
-  Serial.println("HC-SR04: TRIG GPIO18, ECHO GPIO19 via 1k/2k divider; stop threshold 20 cm.");
-  Serial.println("Forward requires a fresh valid distance reading; reverse remains available.");
-}
 
 
 // BEGIN SERIAL CONTROL
